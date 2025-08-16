@@ -1,10 +1,8 @@
 import { type FC, useMemo } from 'react';
+import { useChessStore } from '../store/chess.ts';
 
-type AnalyseTool = {
-    history: string[]
-}
-
-export const AnalyseTool: FC<AnalyseTool> = ({ history }) => {
+export const AnalyseTool: FC = () => {
+    const history = useChessStore(state => state.history);
 
     const data = useMemo(() => {
         const tableData = [];
@@ -21,7 +19,7 @@ export const AnalyseTool: FC<AnalyseTool> = ({ history }) => {
     }, [history])
 
 
-    return <div className="h-[840px] w-[400px] flex my-auto bg-[#4E3371]">
+    return <div className="h-[860px] w-[400px] flex my-auto bg-[#4E3371]">
         <div className={'flex flex-col w-full overflow-y-auto h-[600px]'}>
             {data.map(i => <div key={i.key} className={'flex w-full'}>
                 <div className={'flex justify-center grow-0 shrink-0 basis-[13%] bg-[#5B3F7C] text-[#E8DABD]'}>{i.move}</div>

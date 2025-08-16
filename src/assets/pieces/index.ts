@@ -1,0 +1,12 @@
+export { default as wP } from './wP.png';
+export { default as bP } from './bP.png';
+export { default as wN } from './wN.png';
+export { default as bN } from './bN.png';
+export { default as wB } from './wB.png';
+export { default as bB } from './bB.png';
+export { default as wR } from './wR.png';
+export { default as bR } from './bR.png';
+export { default as wK } from './wK.png';
+export { default as bK } from './bK.png';
+export { default as wQ } from './wQ.png';
+export { default as bQ } from './bQ.png';

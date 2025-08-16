@@ -1,0 +1,1 @@
+export { DialogWinGame } from './DialogWinGame.tsx'
