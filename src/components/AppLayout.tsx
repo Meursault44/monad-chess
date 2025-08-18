@@ -1,16 +1,13 @@
-import { type ReactNode, type FC } from 'react';
+import { type FC } from 'react';
 import { Sidebar } from "@/components/Sidebar.tsx";
 import { HStack } from "@chakra-ui/react";
 import { DialogWinGame } from "@/components/Dialogs";
+import { Outlet } from "react-router";
 
-type AppLayoutType = {
-    children: ReactNode;
-}
-
-export const AppLayout: FC<AppLayoutType> = ({ children }) => {
+export const AppLayout: FC = () => {
     return <HStack>
         <Sidebar />
-        {children}
+        <Outlet />
         <DialogWinGame />
     </HStack>
 }

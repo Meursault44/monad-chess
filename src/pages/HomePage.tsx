@@ -1,95 +1,44 @@
-import { Chessboard, defaultPieces, type SquareHandlerArgs, type PieceDropHandlerArgs } from 'react-chessboard';
-import { useRef, useState, useEffect } from 'react';
-import { Chess, type Square } from 'chess.js'
-import useSound from "use-sound";
-import { wP, bP, wN, bN, wB, bB, wK, bK, wR, bR, bQ, wQ } from '../assets/pieces';
-import moveSelfSfx from '../sounds/move-self.mp3'
-import moveOpponentSfx from '../sounds/move-opponent.mp3'
-import captureSfx from '../sounds/capture.mp3'
-import illegalSfx from '../sounds/illegal.mp3'
-import castleSfx from '../sounds/castle.mp3'
-import promoteSfx from '../sounds/promote.mp3'
-import moveCheckSfx from '../sounds/move-check.mp3'
+import { Chessboard, type SquareHandlerArgs, type PieceDropHandlerArgs } from 'react-chessboard';
+import { useState, useEffect } from 'react';
+import { type Square } from 'chess.js'
 import {useChessStore} from "../store/chess.ts";
 import {useDialogsStore} from "@/store/dialogs.ts";
+import { useSoundEffects, useCustomPieces } from '@/hooks'
+import { AnalyseTool, PlayerRow } from "@/components";
+import { HStack } from "@chakra-ui/react";
 
-export const ChessboardWrapper = () => {
-    const chessGameRef = useRef(new Chess());
-    const chessGame = chessGameRef.current;
-    const [playMoveSelf] = useSound(moveSelfSfx, { volume: 0.3 });
-    const [playMoveOpponent] = useSound(moveOpponentSfx, { volume: 0.3 });
-    const [playCaptureSfx] = useSound(captureSfx, { volume: 0.3 });
-    const [playIllegalSfx] = useSound(illegalSfx, { volume: 0.3 });
-    const [playCastleSfx] = useSound(castleSfx, { volume: 0.3 });
-    const [playPromoteSfx] = useSound(promoteSfx, { volume: 0.3 });
-    const [playMoveCheckSfx] = useSound(moveCheckSfx, { volume: 0.3 });
+export const HomePage = () => {
+    const chessGame = useChessStore();
     const { setDialogWinGame } = useDialogsStore();
+    const { playMoveSound, playMoveOpponentSfx } = useSoundEffects();
+    const customPieces = useCustomPieces();
 
-    const setHistory = useChessStore(state => state.setHistory);
-
-    // track the current position of the chess game in state to trigger a re-render of the chessboard
-    const [chessPosition, setChessPosition] = useState(chessGame.fen());
     const [moveFrom, setMoveFrom] = useState('');
     const [possibleMovesSquares, setPossibleMovesSquares] = useState({});
     const [optionSquares, setOptionSquares] = useState({});
 
-    const customPieces = {
-        ...defaultPieces,
-        // exported from react-chessboard
-        wP: () => <img src={wP} style={{width: '80%', margin: 'auto', marginTop: '8px'}} alt="white Pawn"/>,
-        bP: () => <img src={bP} style={{width: '80%', margin: 'auto', marginTop: '8px'}} alt="black Pawn"/>,
-        wN: () => <img src={wN} style={{width: '105%'}} alt="white knight"/>,
-        bN: () => <img src={bN} style={{width: '105%'}} alt="black knight"/>,
-        wB: () => <img src={wB} style={{width: '90%', marginTop: '3px'}} alt="white bishop"/>,
-        bB: () => <img src={bB} style={{width: '90%', marginTop: '3px'}} alt="blac bishop"/>,
-        wK: () => <img src={wK} style={{width: '82%', margin: 'auto'}} alt="white king"/>,
-        bK: () => <img src={bK} style={{width: '82%', margin: 'auto'}} alt="black king"/>,
-        wQ: () => <img src={wQ} style={{width: '73%', margin: 'auto'}} alt="white queen"/>,
-        bQ: () => <img src={bQ} style={{width: '73%', margin: 'auto'}} alt="black queen"/>,
-        wR: () => <img src={wR} style={{width: '90%', marginLeft: '8px', marginTop: '8px'}} alt="white rook"/>,
-        bR: () => <img src={bR} style={{width: '90%', marginLeft: '8px', marginTop: '8px'}} alt="black rook"/>,
-    };
-
     const [isDown, setIsDown] = useState(false);
-
-    const getGameStatus = () => {
-        if (chessGame.isGameOver()) {
-            if (chessGame.isCheckmate()) {
-                // Победитель — противоположный цвет от того, чей сейчас ход
-                const winner = chessGame.turn() === 'w' ? 'black' : 'white';
-                console.log(winner)
-                setDialogWinGame(true)
-            } else {
-                console.log('Ничья');
-        }
-    }}
 
     // make a random "CPU" move
     function makeRandomMove() {
         // get all possible moves`
-        const possibleMoves = chessGame.moves({ verbose: true });
-
-        // exit if the game is over
-        if (chessGame.isGameOver()) {
+        if (chessGame.getGameStatus() !== 'playing') {
             return;
         }
+        const possibleMoves = chessGame.moves({ verbose: true });
 
         // pick a random move
         const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
 
         // make the move
         chessGame.move({ from: randomMove.from, to: randomMove.to, promotion: 'q' });
+        chessGame.updateData();
 
-        playMoveOpponent()
+        playMoveOpponentSfx()
         setOptionSquares({
             [randomMove.from]: { background: 'rgba(250, 231, 49, 0.8)' },
             [randomMove.to]:   { background: 'rgba(250, 231, 49, 0.8)' },
         });
-
-
-        // update the position state
-        setChessPosition(chessGame.fen());
-        setHistory(chessGame.history())
     }
 
     // get the move options for a square to show valid moves
@@ -176,19 +125,9 @@ export const ChessboardWrapper = () => {
                 to: square,
                 promotion: 'q'
             });
+            chessGame.updateData();
 
-            if (moveInfo.promotion) {
-                playPromoteSfx()
-            } else if (moveInfo.captured !== undefined) {
-                playCaptureSfx()
-            } else if (moveInfo.san === "O-O" || moveInfo.san === "O-O-O") {
-                playCastleSfx()
-            } else if (chessGame.isCheck()) {
-                playMoveCheckSfx()
-            } else {
-                playMoveSelf()
-            }
-
+            playMoveSound({moveInfo, isCheck: chessGame.isCheck})
 
             const newSquares: Record<string, React.CSSProperties> = {};
 
@@ -201,7 +140,10 @@ export const ChessboardWrapper = () => {
             };
             setPossibleMovesSquares({});
             setOptionSquares(newSquares);
-            getGameStatus()
+
+            if (chessGame.getGameStatus() === 'white') {
+                setDialogWinGame(true);
+            }
 
         } catch {
             // if invalid, setMoveFrom and getMoveOptions
@@ -215,12 +157,8 @@ export const ChessboardWrapper = () => {
             return;
         }
 
-        // update the position state
-        setChessPosition(chessGame.fen());
-        setHistory(chessGame.history())
-
         // make random cpu move after a short delay
-        setTimeout(makeRandomMove, 300);
+        setTimeout(makeRandomMove, 2000);
 
         // clear moveFrom and optionSquares
         setMoveFrom('');
@@ -238,16 +176,12 @@ export const ChessboardWrapper = () => {
 
         // try to make the move according to chess.js logic
         try {
-            chessGame.move({
+            const moveInfo = chessGame.move({
                 from: sourceSquare,
                 to: targetSquare,
                 promotion: 'q' // always promote to a queen for example simplicity
             });
-
-
-            // update the position state upon successful move to trigger a re-render of the chessboard
-            setChessPosition(chessGame.fen());
-            setHistory(chessGame.history())
+            chessGame.updateData();
 
             // clear moveFrom and optionSquares
             setMoveFrom('');
@@ -265,9 +199,13 @@ export const ChessboardWrapper = () => {
             setOptionSquares(newSquares);
 
             // make random cpu move after a short delay
-            playMoveSelf()
+            playMoveSound({moveInfo, isCheck: chessGame.isCheck})
+
             setTimeout(makeRandomMove, 2000);
-            getGameStatus()
+
+            if (chessGame.getGameStatus() === 'white') {
+                setDialogWinGame(true);
+            }
             // return true as the move was successful
             return true;
         } catch {
@@ -280,7 +218,7 @@ export const ChessboardWrapper = () => {
     const chessboardOptions = {
         onPieceDrop,
         onSquareClick,
-        position: chessPosition,
+        position: chessGame.position,
         squareStyles: {...optionSquares, ...possibleMovesSquares},
         onMouseOverSquare: (p) => {
             console.log(p)
@@ -323,7 +261,16 @@ export const ChessboardWrapper = () => {
         };
     }, []);
 
-    return <div className={`w-[760px] h-[760px]`}>
-            <Chessboard options={chessboardOptions} />
-        </div>
+    return <HStack
+            w="1150px"
+            justify={'center'}
+            gap={10}
+        >
+            <div className={'my-auto'}>
+                <PlayerRow />
+                <Chessboard options={chessboardOptions} />
+                <PlayerRow />
+            </div>
+            <AnalyseTool />
+        </HStack>
 }

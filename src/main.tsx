@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { PrivyProvider } from '@privy-io/react-auth';
 import { ChakraProvider, defaultSystem  } from "@chakra-ui/react"
-import { AppLayout } from '@/components'
+import { BrowserRouter } from "react-router";
 import './index.css'
 import App from './App.tsx'
 
@@ -21,9 +21,9 @@ createRoot(document.getElementById('root')!).render(
           }}
       >
           <ChakraProvider value={defaultSystem}>
-              <AppLayout>
+              <BrowserRouter>
                   <App />
-              </AppLayout>
+              </BrowserRouter>
           </ChakraProvider>
       </PrivyProvider>
   </StrictMode>,
