@@ -1,10 +1,9 @@
 import { create } from 'zustand'
 import { Chess } from 'chess.js';
-import type { Color } from 'chess.js';
+import type { Color, Square } from 'chess.js';
 
 type MovesFn = Chess['moves'];
 type MoveFn = Chess['move'];
-type GetFn = Chess['get'];
 
 type ChessStoreState = {
     history: string[];
@@ -18,7 +17,7 @@ type ChessStoreActions = {
     getGameStatus: () => 'black' | 'white' | 'draw' | 'playing';
     moves: MovesFn;
     move: MoveFn;
-    get: GetFn;
+    checkPremove: (args: { from: Square; to: Square; }) => boolean;
 }
 
 type ChessStore = ChessStoreState & ChessStoreActions;
@@ -37,7 +36,6 @@ export const useChessStore = create<ChessStore>()((set) => {
             isCheck: chessGame.isCheck(),
             turn: chessGame.turn(),
         }),
-
         getGameStatus: () => {
             if (chessGame.isGameOver()) {
                 if (chessGame.isCheckmate()) {
@@ -49,9 +47,18 @@ export const useChessStore = create<ChessStore>()((set) => {
             }
             return ('playing');
         },
+        checkPremove: ({ from, to }) => {
+            let fen = chessGame.fen();
+
+            fen = fen.replace(/\s(w|b)\s/, (match, p1) => p1 === 'w' ? ' b ' : ' w '); // replacement of the move of pieces to the opposite side
+
+            const game = new Chess(fen);
+            const moves = game.moves({ square: from as Square, verbose: true });
+
+            return moves.some(m => m.to === to);
+        },
         moves: chessGame.moves.bind(chessGame),
         move: chessGame.move.bind(chessGame),
-        get: chessGame.get.bind(chessGame),
     }
 
 })

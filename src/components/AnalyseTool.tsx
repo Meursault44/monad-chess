@@ -1,9 +1,10 @@
 import { type FC, useMemo } from 'react';
 import { useChessStore } from '../store/chess.ts';
-import {Button, VStack} from "@chakra-ui/react"
+import {Button, VStack, Text} from "@chakra-ui/react"
 
 export const AnalyseTool: FC = () => {
     const history = useChessStore(state => state.history);
+    const turn = useChessStore(state => state.turn);
 
     const data = useMemo(() => {
         const tableData = [];
@@ -30,6 +31,7 @@ export const AnalyseTool: FC = () => {
         </div>
         <VStack align="stretch" p={'10px'}>
             <Button>Play</Button>
+            <Text color={'white'}>{turn === 'w' ? 'Your move' : 'Opponent\'s move'}</Text>
         </VStack>
     </div>
 }
