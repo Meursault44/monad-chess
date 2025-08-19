@@ -4,6 +4,7 @@ import type { Color, Square } from 'chess.js';
 
 type MovesFn = Chess['moves'];
 type MoveFn = Chess['move'];
+type FindPieceFn = Chess['findPiece'];
 
 type ChessStoreState = {
     history: string[];
@@ -17,6 +18,7 @@ type ChessStoreActions = {
     getGameStatus: () => 'black' | 'white' | 'draw' | 'playing';
     moves: MovesFn;
     move: MoveFn;
+    findPiece: FindPieceFn;
     checkPremove: (args: { from: Square; to: Square; }) => boolean;
 }
 
@@ -59,6 +61,7 @@ export const useChessStore = create<ChessStore>()((set) => {
         },
         moves: chessGame.moves.bind(chessGame),
         move: chessGame.move.bind(chessGame),
+        findPiece: chessGame.findPiece.bind(chessGame),
     }
 
 })

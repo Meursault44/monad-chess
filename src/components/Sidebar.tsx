@@ -16,7 +16,10 @@ export const Sidebar = () => {
         >
             <VStack align="stretch">
                 <ChakraLink as={RouterLink} to="/">Homepage</ChakraLink>
+                <ChakraLink as={RouterLink} to="/">Play online</ChakraLink>
+                <ChakraLink as={RouterLink} to="/">Play bots</ChakraLink>
                 <ChakraLink as={RouterLink} to="/puzzles">Puzzles</ChakraLink>
+                <ChakraLink as={RouterLink} to="/puzzles">Tournaments</ChakraLink>
             </VStack>
             <AuthButtons />
         </VStack>

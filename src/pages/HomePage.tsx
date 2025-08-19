@@ -6,13 +6,31 @@ import { useDialogsStore } from "@/store/dialogs.ts";
 import { useSoundEffects, useCustomPieces } from '@/hooks'
 import { AnalyseTool, PlayerRow } from "@/components";
 import { HStack } from "@chakra-ui/react";
+import PromotionOverlay from '@/components/PromotionOverlay';
 
 type SquaresStylesType = Partial<Record<Square, React.CSSProperties>>;
+
+const lichessRing = (
+    color = '#ff0000',  // цвет обводки
+    stroke = 6,         // толщина обводки в px
+    sizePct = 95        // диаметр круга относительно клетки (в %)
+): React.CSSProperties => {
+    const r = 50 - (stroke / 2); // радиус с учётом stroke, чтобы круг не «срезало»
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" shape-rendering="geometricPrecision">
+    <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" />
+  </svg>`;
+    return {
+        backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`,
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center',
+        backgroundSize: `${sizePct}% ${sizePct}%`,
+    };
+};
 
 export const HomePage = () => {
     const chessGame = useChessStore();
     const { setDialogWinGame } = useDialogsStore();
-    const { playMoveSound, playMoveOpponentSfx } = useSoundEffects();
+    const { playMoveSound, playMoveOpponentSfx, playIllegalSfx } = useSoundEffects();
     const customPieces = useCustomPieces();
 
     const [moveFrom, setMoveFrom] = useState('');
@@ -37,6 +55,9 @@ export const HomePage = () => {
         lock: null,          // квадрат, по которому первоначально зажали ЛКМ
         selectedOnce: false, // чтобы onSquareClick вызвался один раз
     });
+
+    // === PROMOTION overlay (как в примере react-chessboard) ===
+    const [promotionMove, setPromotionMove] = useState<{ from: Square; to: Square; color: 'w'|'b' } | null>(null);
 
     // make a random "CPU" move
     function makeRandomMove() {
@@ -80,8 +101,64 @@ export const HomePage = () => {
         return true;
     }
 
+    // ===== Helpers для промо =====
+    function findLegalMove(from: Square, to: Square) {
+        const legal = chessGame.moves({ square: from as Square, verbose: true }) as any[];
+        return legal.find(m => m.from === from && m.to === to);
+    }
+    function isPromotionMove(from: Square, to: Square) {
+        const found = findLegalMove(from, to);
+        return Boolean(found && typeof found.flags === 'string' && found.flags.includes('p'));
+    }
+    function fileToIndex(file: string, orientation: 'white' | 'black' = 'white') {
+        const idx = Math.max(0, Math.min(7, file.charCodeAt(0) - 'a'.charCodeAt(0)));
+        return orientation === 'white' ? idx : 7 - idx;
+    }
+    const boardOrientation: 'white' | 'black' = 'white'; // если появится ориентация — подставь реальную
+
+    // ширина клетки + смещение для столбца целевой клетки (как в примере)
+    const squareWidth =
+        document.querySelector(`[data-column="a"][data-row="1"]`)
+            ?.getBoundingClientRect()?.width ?? 0;
+
+    const promotionSquareLeft = promotionMove?.to
+        ? squareWidth * fileToIndex((promotionMove.to as string).match(/^[a-h]/)?.[0] ?? 'a', boardOrientation)
+        : 0;
+
+    // выбрать фигуру для промо
+    function onPromotionPieceSelect(piece: 'q'|'r'|'b'|'n') {
+        if (!promotionMove) return;
+        try {
+            const moveInfo = chessGame.move({
+                from: promotionMove.from,
+                to: promotionMove.to,
+                promotion: piece
+            });
+            chessGame.updateData();
+
+            // очистка подсказок/кружков и подсветка последнего хода
+            setPossibleMovesSquares({});
+            setRcSquares({});
+            setOptionSquares({
+                [promotionMove.from]: { background: 'rgba(250, 231, 49, 0.8)' },
+                [promotionMove.to]:   { background: 'rgba(250, 231, 49, 0.8)' },
+            });
+
+            playMoveSound({ moveInfo, isCheck: chessGame.isCheck });
+            if (chessGame.getGameStatus() === 'white') setDialogWinGame(true);
+
+            setTimeout(makeRandomMove, 3000);
+        } catch (e) {
+            // noop
+        } finally {
+            setPromotionMove(null);
+            setMoveFrom('');
+        }
+    }
+
     function onSquareClick({ square, piece }: SquareHandlerArgs) {
         setRcSquares({});
+
         if (!moveFrom && piece) {
             const hasMoveOptions = getMoveOptions(square as Square);
             if (hasMoveOptions) setMoveFrom(square);
@@ -94,6 +171,12 @@ export const HomePage = () => {
         if (!foundMove) {
             const hasMoveOptions = getMoveOptions(square as Square);
             setMoveFrom(hasMoveOptions ? square : '');
+            return;
+        }
+
+        // перехват промо-хода: откроем оверлей и выходим
+        if (isPromotionMove(moveFrom as Square, square as Square)) {
+            setPromotionMove({ from: moveFrom as Square, to: square as Square, color: chessGame.turn });
             return;
         }
 
@@ -126,6 +209,12 @@ export const HomePage = () => {
     function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
         if (!targetSquare) return false;
 
+        // промо при dnd: показываем оверлей и не двигаем сразу (как в примере)
+        if (isPromotionMove(sourceSquare as Square, targetSquare as Square)) {
+            setPromotionMove({ from: sourceSquare as Square, to: targetSquare as Square, color: chessGame.turn });
+            return true; // чтобы не было лишней анимации snapback
+        }
+
         if (chessGame.turn === 'b') {
             if (chessGame.checkPremove({ from: sourceSquare, to: targetSquare })) {
                 setPremove({ from: sourceSquare, to: targetSquare });
@@ -157,6 +246,28 @@ export const HomePage = () => {
             }
             return true;
         } catch {
+            playIllegalSfx()
+            if (chessGame.isCheck) {
+                const sq = chessGame.findPiece({
+                    color: chessGame.turn,
+                    type: 'k'
+                }); // король того, кто сейчас под шахом
+                if (sq) {
+                    // мигать 3 раза
+                    let count = 0;
+                    const interval = setInterval(() => {
+                        setOptionSquares(prev => {
+                            const active = count % 2 === 0;
+                            return {
+                                ...prev,
+                                [sq]: active ? { background: 'rgba(235, 97, 80, .8)' } : {}
+                            };
+                        });
+                        count++;
+                        if (count > 6) clearInterval(interval); // 3 мигания
+                    }, 250);
+                }
+            }
             return false;
         }
     }
@@ -185,10 +296,7 @@ export const HomePage = () => {
                 }
                 return {
                     ...prev,
-                    [sq]: {
-                        background:
-                            'radial-gradient(circle, rgba(255,0,0,0.45) 0%, rgba(255,0,0,0.25) 60%, rgba(255,0,0,0) 70%)',
-                    },
+                    [sq]: lichessRing('rgba(235, 97, 80, .8)'),
                 };
             });
         },
@@ -227,8 +335,8 @@ export const HomePage = () => {
                 rightRef.current.last = sq;
             }
         },
-
         pieces: customPieces,
+        onPieceDragBegin: (e) => console.log('drag begin', e),
         darkSquareStyle: { backgroundColor: '#9778B4' },
         lightSquareStyle: { backgroundColor: '#E7DBF0' },
         id: 'click-or-drag-to-move',
@@ -241,6 +349,11 @@ export const HomePage = () => {
             if (!foundMove) {
                 setPremove(null);
                 setPremoveSquares({});
+                return;
+            }
+
+            if (isPromotionMove(premove.from as Square, premove.to as Square)) {
+                setPromotionMove({ from: premove.from as Square, to: premove.to as Square, color: chessGame.turn });
                 return;
             }
 
@@ -261,7 +374,7 @@ export const HomePage = () => {
 
     return (
         <HStack w="1150px" justify={'center'} gap={10}>
-            <div className={'my-auto'}>
+            <div className={'my-auto flex flex-col'}>
                 <PlayerRow />
 
                 {/* ➕ Обёртка: выключаем контекст-меню и тречим состояние кнопок мыши */}
@@ -294,14 +407,32 @@ export const HomePage = () => {
                         WebkitUserSelect: 'none',
                         MozUserSelect: 'none',
                         msUserSelect: 'none',
+                        position: 'relative',
+                        margin: '10px auto',
                     }}
                 >
                     <Chessboard options={chessboardOptions} />
+                    <PromotionOverlay
+                        move={promotionMove}
+                        left={promotionSquareLeft}
+                        squareWidth={squareWidth}
+                        pieces={customPieces as any}
+                        onSelect={onPromotionPieceSelect}
+                        onClose={() => {
+                            // логика «отмены» как у тебя в CloseButton
+                            setPremove(null);
+                            setPremoveSquares({});
+                            setPossibleMovesSquares({});
+                            setPromotionMove(null);
+                        }}
+                    />
                 </div>
 
                 <PlayerRow />
             </div>
             <AnalyseTool />
+
+            {/* === PROMOTION OVERLAY (Tailwind, как в примере react-chessboard) === */}
         </HStack>
     );
 }
