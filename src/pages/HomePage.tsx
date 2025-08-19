@@ -236,6 +236,14 @@ export const HomePage = () => {
 
     useEffect(() => {
         if (chessGame.turn === 'w' && premove) {
+            const moves = chessGame.moves({ square: premove.from as Square, verbose: true });
+            const foundMove = moves.find(m => m.from === premove.from && m.to === premove.to);
+            if (!foundMove) {
+                setPremove(null);
+                setPremoveSquares({});
+                return;
+            }
+
             chessGame.move({ from: premove.from, to: premove.to, promotion: 'q' });
             setOptionSquares({
                 [premove.from]: { background: 'rgba(250, 231, 49, 0.8)' },
