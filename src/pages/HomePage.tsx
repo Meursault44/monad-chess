@@ -1,21 +1,21 @@
 import { Chessboard, type SquareHandlerArgs, type PieceDropHandlerArgs } from 'react-chessboard';
-import { useState, useEffect, useRef } from 'react';
-import { type Square } from 'chess.js'
-import { useChessStore } from "../store/chess.ts";
-import { useDialogsStore } from "@/store/dialogs.ts";
-import { useSoundEffects, useCustomPieces } from '@/hooks'
-import { AnalyseTool, PlayerRow } from "@/components";
-import { HStack } from "@chakra-ui/react";
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { type Square } from 'chess.js';
+import { useChessStore } from '../store/chess.ts';
+import { useDialogsStore } from '@/store/dialogs.ts';
+import { useSoundEffects, useCustomPieces } from '@/hooks';
+import { AnalyseTool, PlayerRow } from '@/components';
+import { HStack } from '@chakra-ui/react';
 import PromotionOverlay from '@/components/PromotionOverlay';
 
 type SquaresStylesType = Partial<Record<Square, React.CSSProperties>>;
 
 const lichessRing = (
-    color = '#ff0000',  // цвет обводки
-    stroke = 6,         // толщина обводки в px
-    sizePct = 95        // диаметр круга относительно клетки (в %)
+    color = '#ff0000',
+    stroke = 6,
+    sizePct = 95
 ): React.CSSProperties => {
-    const r = 50 - (stroke / 2); // радиус с учётом stroke, чтобы круг не «срезало»
+    const r = 50 - stroke / 2;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" shape-rendering="geometricPrecision">
     <circle cx="50" cy="50" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" />
   </svg>`;
@@ -28,82 +28,90 @@ const lichessRing = (
 };
 
 export const HomePage = () => {
-    const chessGame = useChessStore();
+    // === вытаскиваем только то, что нужно ===
+    const position      = useChessStore(s => s.position);
+    const turn          = useChessStore(s => s.turn);
+    const isCheck       = useChessStore(s => s.isCheck);
+    const moves         = useChessStore(s => s.moves);
+    const applyMove     = useChessStore(s => s.applyMove);
+    const updateData    = useChessStore(s => s.updateData);
+    const getGameStatus = useChessStore(s => s.getGameStatus);
+    const checkPremove  = useChessStore(s => s.checkPremove);
+    const findPiece     = useChessStore(s => s.findPiece);
+    const getLastMoveSquares = useChessStore(s => s.getLastMoveSquares);
+
     const { setDialogWinGame } = useDialogsStore();
     const { playMoveSound, playMoveOpponentSfx, playIllegalSfx } = useSoundEffects();
     const customPieces = useCustomPieces();
+    const [animMs, setAnimMs] = useState(300);
 
     const [moveFrom, setMoveFrom] = useState('');
     const [possibleMovesSquares, setPossibleMovesSquares] = useState<SquaresStylesType>({});
-    const [optionSquares, setOptionSquares] = useState<SquaresStylesType>({});
     const [premoveSquares, setPremoveSquares] = useState<SquaresStylesType>({});
-    const [premove, setPremove] = useState<{ from: string, to: string } | null>(null);
+    const [premove, setPremove] = useState<{ from: string; to: string } | null>(null);
+    const lastMove = getLastMoveSquares(); // { from, to } | null
+    const [blinkSquares, setBlinkSquares] = useState<SquaresStylesType>({});
 
-    // ✅ клетки, покрашенные правым кликом
+    const lastMoveStyles = useMemo<SquaresStylesType>(() => {
+        if (!lastMove) return {};
+        return {
+            [lastMove.from]: { background: 'rgba(250, 231, 49, 0.8)' },
+            [lastMove.to]: { background: 'rgba(250, 231, 49, 0.8)' },
+        };
+    }, [lastMove?.from, lastMove?.to]);
+
+    // ПКМ кружки
     const [rcSquares, setRcSquares] = useState<SquaresStylesType>({});
-
-    // ✅ трекинг правой кнопки (для отсева стрелок)
     const rightRef = useRef<{ down: boolean; moved: boolean; last: Square | null }>({
         down: false,
         moved: false,
         last: null,
     });
 
-    // ✅ трекинг левой кнопки (взамен прежнего isDown)
+    // ЛКМ замок
     const leftRef = useRef<{ down: boolean; lock: Square | null; selectedOnce: boolean }>({
         down: false,
-        lock: null,          // квадрат, по которому первоначально зажали ЛКМ
-        selectedOnce: false, // чтобы onSquareClick вызвался один раз
+        lock: null,
+        selectedOnce: false,
     });
 
-    // === PROMOTION overlay (как в примере react-chessboard) ===
-    const [promotionMove, setPromotionMove] = useState<{ from: Square; to: Square; color: 'w'|'b' } | null>(null);
+    // PROMO overlay
+    const [promotionMove, setPromotionMove] = useState<{ from: Square; to: Square; color: 'w' | 'b' } | null>(null);
 
-    // make a random "CPU" move
+    // CPU random
     function makeRandomMove() {
-        if (chessGame.getGameStatus() !== 'playing') {
-            return;
-        }
-        const possibleMoves = chessGame.moves({ verbose: true });
-        const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-
-        chessGame.move({ from: randomMove.from, to: randomMove.to, promotion: 'q' });
-        chessGame.updateData();
-
+        if (getGameStatus() !== 'playing') return;
+        const possible = moves({ verbose: true }) as any[];
+        const rnd = possible[Math.floor(Math.random() * possible.length)];
+        applyMove({ from: rnd.from, to: rnd.to, promotion: 'q' });
+        updateData();
         playMoveOpponentSfx();
-        setOptionSquares({
-            [randomMove.from]: { background: 'rgba(250, 231, 49, 0.8)' },
-            [randomMove.to]: { background: 'rgba(250, 231, 49, 0.8)' },
-        });
     }
 
-    // get the move options for a square to show valid moves
+    // опции хода
     function getMoveOptions(square: Square) {
-        const moves = chessGame.moves({ square, verbose: true });
-
-        if (moves.length === 0) {
+        const ms = moves({ square, verbose: true }) as any[];
+        if (ms.length === 0) {
             setPossibleMovesSquares({});
             return false;
         }
-
-        const newSquares: Record<string, React.CSSProperties> = {};
-        for (const move of moves) {
-            newSquares[move.to] = {
+        const ns: Record<string, React.CSSProperties> = {};
+        for (const m of ms) {
+            ns[m.to] = {
                 backgroundImage: `url(/MonadLogoBlack.svg)`,
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'center',
-                backgroundSize: move.captured ? '100%' : '50%',
+                backgroundSize: m.captured ? '100%' : '50%',
             };
         }
-
-        newSquares[square] = { background: 'rgba(220, 255, 163, 0.8)' };
-        setPossibleMovesSquares(newSquares);
+        ns[square] = { background: 'rgba(220, 255, 163, 0.8)' };
+        setPossibleMovesSquares(ns);
         return true;
     }
 
-    // ===== Helpers для промо =====
+    // promo helpers
     function findLegalMove(from: Square, to: Square) {
-        const legal = chessGame.moves({ square: from as Square, verbose: true }) as any[];
+        const legal = moves({ square: from as Square, verbose: true }) as any[];
         return legal.find(m => m.from === from && m.to === to);
     }
     function isPromotionMove(from: Square, to: Square) {
@@ -114,9 +122,9 @@ export const HomePage = () => {
         const idx = Math.max(0, Math.min(7, file.charCodeAt(0) - 'a'.charCodeAt(0)));
         return orientation === 'white' ? idx : 7 - idx;
     }
-    const boardOrientation: 'white' | 'black' = 'white'; // если появится ориентация — подставь реальную
+    const boardOrientation: 'white' | 'black' = 'white';
 
-    // ширина клетки + смещение для столбца целевой клетки (как в примере)
+    // размеры для overlay
     const squareWidth =
         document.querySelector(`[data-column="a"][data-row="1"]`)
             ?.getBoundingClientRect()?.width ?? 0;
@@ -125,30 +133,25 @@ export const HomePage = () => {
         ? squareWidth * fileToIndex((promotionMove.to as string).match(/^[a-h]/)?.[0] ?? 'a', boardOrientation)
         : 0;
 
-    // выбрать фигуру для промо
-    function onPromotionPieceSelect(piece: 'q'|'r'|'b'|'n') {
+    // выбор фигуры в промо
+    function onPromotionPieceSelect(piece: 'q' | 'r' | 'b' | 'n') {
         if (!promotionMove) return;
         try {
-            const moveInfo = chessGame.move({
+            const moveInfo = applyMove({
                 from: promotionMove.from,
                 to: promotionMove.to,
-                promotion: piece
+                promotion: piece,
             });
-            chessGame.updateData();
+            updateData();
 
-            // очистка подсказок/кружков и подсветка последнего хода
             setPossibleMovesSquares({});
             setRcSquares({});
-            setOptionSquares({
-                [promotionMove.from]: { background: 'rgba(250, 231, 49, 0.8)' },
-                [promotionMove.to]:   { background: 'rgba(250, 231, 49, 0.8)' },
-            });
 
-            playMoveSound({ moveInfo, isCheck: chessGame.isCheck });
-            if (chessGame.getGameStatus() === 'white') setDialogWinGame(true);
+            playMoveSound({ moveInfo, isCheck });
+            if (getGameStatus() === 'white') setDialogWinGame(true);
 
             setTimeout(makeRandomMove, 3000);
-        } catch (e) {
+        } catch {
             // noop
         } finally {
             setPromotionMove(null);
@@ -160,44 +163,38 @@ export const HomePage = () => {
         setRcSquares({});
 
         if (!moveFrom && piece) {
-            const hasMoveOptions = getMoveOptions(square as Square);
-            if (hasMoveOptions) setMoveFrom(square);
+            const has = getMoveOptions(square as Square);
+            if (has) setMoveFrom(square);
             return;
         }
 
-        const moves = chessGame.moves({ square: moveFrom as Square, verbose: true });
-        const foundMove = moves.find(m => m.from === moveFrom && m.to === square);
+        const ms = moves({ square: moveFrom as Square, verbose: true }) as any[];
+        const ok = ms.find(m => m.from === moveFrom && m.to === square);
 
-        if (!foundMove) {
-            const hasMoveOptions = getMoveOptions(square as Square);
-            setMoveFrom(hasMoveOptions ? square : '');
+        if (!ok) {
+            const has = getMoveOptions(square as Square);
+            setMoveFrom(has ? square : '');
             return;
         }
 
-        // перехват промо-хода: откроем оверлей и выходим
         if (isPromotionMove(moveFrom as Square, square as Square)) {
-            setPromotionMove({ from: moveFrom as Square, to: square as Square, color: chessGame.turn });
+            setPromotionMove({ from: moveFrom as Square, to: square as Square, color: turn });
             return;
         }
 
         try {
-            const moveInfo = chessGame.move({ from: moveFrom, to: square, promotion: 'q' });
-            chessGame.updateData();
+            const moveInfo = applyMove({ from: moveFrom, to: square, promotion: 'q' });
+            updateData();
 
-            playMoveSound({ moveInfo, isCheck: chessGame.isCheck });
-
-            const newSquares: Record<string, React.CSSProperties> = {};
-            newSquares[moveFrom] = { background: 'rgba(250, 231, 49, 0.8)' };
-            newSquares[square] = { background: 'rgba(250, 231, 49, 0.8)' };
+            playMoveSound({ moveInfo, isCheck });
             setPossibleMovesSquares({});
-            setOptionSquares(newSquares);
 
-            if (chessGame.getGameStatus() === 'white') {
+            if (getGameStatus() === 'white') {
                 setDialogWinGame(true);
             }
         } catch {
-            const hasMoveOptions = getMoveOptions(square as Square);
-            if (hasMoveOptions) setMoveFrom(square);
+            const has = getMoveOptions(square as Square);
+            if (has) setMoveFrom(square);
             return;
         }
 
@@ -205,18 +202,17 @@ export const HomePage = () => {
         setMoveFrom('');
     }
 
-    // handle piece drop
+    // DnD
     function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
         if (!targetSquare) return false;
 
-        // промо при dnd: показываем оверлей и не двигаем сразу (как в примере)
         if (isPromotionMove(sourceSquare as Square, targetSquare as Square)) {
-            setPromotionMove({ from: sourceSquare as Square, to: targetSquare as Square, color: chessGame.turn });
-            return true; // чтобы не было лишней анимации snapback
+            setPromotionMove({ from: sourceSquare as Square, to: targetSquare as Square, color: turn });
+            return true;
         }
 
-        if (chessGame.turn === 'b') {
-            if (chessGame.checkPremove({ from: sourceSquare, to: targetSquare })) {
+        if (turn === 'b') {
+            if (checkPremove({ from: sourceSquare, to: targetSquare })) {
                 setPremove({ from: sourceSquare, to: targetSquare });
                 setPremoveSquares({
                     [sourceSquare]: { background: 'rgba(57, 84, 151, 0.8)' },
@@ -227,64 +223,61 @@ export const HomePage = () => {
         }
 
         try {
-            const moveInfo = chessGame.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-            chessGame.updateData();
+            const moveInfo = applyMove({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+            if (!moveInfo) throw new Error('Invalid move');
+
+            updateData();
 
             setMoveFrom('');
             setPossibleMovesSquares({});
 
-            const newSquares: Record<string, React.CSSProperties> = {};
-            newSquares[sourceSquare] = { background: 'rgba(250, 231, 49, 0.8)' };
-            newSquares[targetSquare] = { background: 'rgba(250, 231, 49, 0.8)' };
-            setOptionSquares(newSquares);
-
-            playMoveSound({ moveInfo, isCheck: chessGame.isCheck });
+            playMoveSound({ moveInfo, isCheck });
             setTimeout(makeRandomMove, 3000);
 
-            if (chessGame.getGameStatus() === 'white') {
+            if (getGameStatus() === 'white') {
                 setDialogWinGame(true);
             }
             return true;
         } catch {
-            playIllegalSfx()
-            if (chessGame.isCheck) {
-                const sq = chessGame.findPiece({
-                    color: chessGame.turn,
-                    type: 'k'
-                }); // король того, кто сейчас под шахом
+            if (targetSquare === sourceSquare) return;
+            playIllegalSfx();
+            if (isCheck) {
+                const sq = findPiece({ color: turn, type: 'k' });
                 if (sq) {
-                    // мигать 3 раза
                     let count = 0;
-                    const interval = setInterval(() => {
-                        setOptionSquares(prev => {
-                            const active = count % 2 === 0;
-                            return {
-                                ...prev,
-                                [sq]: active ? { background: 'rgba(235, 97, 80, .8)' } : {}
-                            };
-                        });
+                    const id = setInterval(() => {
+                        setBlinkSquares(prev =>
+                            count % 2 === 0
+                                ? { ...prev, [sq]: { background: 'rgba(235, 97, 80, .8)' } }
+                                : (() => {
+                                    const { [sq]: _, ...rest } = prev;
+                                    return rest;
+                                })()
+                        );
                         count++;
-                        if (count > 6) clearInterval(interval); // 3 мигания
+                        if (count > 6) clearInterval(id);
                     }, 250);
                 }
             }
             return false;
         }
     }
-    console.log(rcSquares)
 
     const chessboardOptions = {
         onPieceDrop,
         onSquareClick,
-        position: chessGame.position,
-        // 👇 добавили rcSquares
-        squareStyles: { ...optionSquares, ...possibleMovesSquares, ...premoveSquares, ...rcSquares },
-
-        // Правый клик: красим только при «чистом» клике (не при рисовании стрелки)
-        onSquareRightClick: (data) => {
-            const sq = data?.square;
+        position,
+        squareStyles: {
+            ...lastMoveStyles,
+            ...possibleMovesSquares,
+            ...premoveSquares,
+            ...rcSquares,
+            ...blinkSquares,
+        },
+        onSquareRightClick: (data: any) => {
+            const sq = data?.square as Square | undefined;
+            if (!sq) return;
             if (rightRef.current.moved) {
-                // был драг для стрелки — игнорим
                 rightRef.current.moved = false;
                 rightRef.current.last = null;
                 return;
@@ -292,7 +285,7 @@ export const HomePage = () => {
             setRcSquares(prev => {
                 if (prev[sq]) {
                     const { [sq]: _, ...rest } = prev;
-                    return rest; // повторный клик снимает подсветку
+                    return rest;
                 }
                 return {
                     ...prev,
@@ -300,34 +293,22 @@ export const HomePage = () => {
                 };
             });
         },
-
-        // Логика ховера: если зажата левая — проксируем твой onSquareClick (drag-to-move)
         onMouseOverSquare: (p: SquareHandlerArgs) => {
             const sq = p.square as Square;
 
-            // --- ЛЕВАЯ КНОПКА: реагируем только на «стартовую» фигуру ---
+            // ЛКМ: реагируем только на стартовую фигуру
             if (leftRef.current.down) {
-                // если «старт» ещё не зафиксирован и тут есть фигура — закрепим квадрат
                 if (leftRef.current.lock == null && p.piece) {
                     leftRef.current.lock = sq;
-
-                    // вызовем onSquareClick ровно один раз — чтобы выбрать эту фигуру
                     if (!leftRef.current.selectedOnce) {
                         onSquareClick(p);
                         leftRef.current.selectedOnce = true;
                     }
                 }
-
-                // если уже закрепили старт, игнорируем ховеры по другим клеткам
-                if (leftRef.current.lock && sq !== leftRef.current.lock) {
-                    return;
-                }
-
-                // остаёмся над тем же квадратом — ничего больше не делаем
-                // (само перемещение выполнится через onPieceDrop)
+                if (leftRef.current.lock && sq !== leftRef.current.lock) return;
             }
 
-            // --- ПРАВАЯ КНОПКА: детект «стрелки» ---
+            // ПКМ: детект «стрелки»
             if (rightRef.current.down) {
                 if (rightRef.current.last && rightRef.current.last !== sq) {
                     rightRef.current.moved = true;
@@ -336,48 +317,47 @@ export const HomePage = () => {
             }
         },
         pieces: customPieces,
-        onPieceDragBegin: (e) => console.log('drag begin', e),
+        animationDuration: animMs,
+        onPieceDragBegin: (e: any) => console.log('drag begin', e),
         darkSquareStyle: { backgroundColor: '#9778B4' },
         lightSquareStyle: { backgroundColor: '#E7DBF0' },
         id: 'click-or-drag-to-move',
-    };
+    } as const;
 
+    // Премув белых — завязываем ТОЛЬКО на turn и premove (без функций в deps!)
     useEffect(() => {
-        if (chessGame.turn === 'w' && premove) {
-            const moves = chessGame.moves({ square: premove.from as Square, verbose: true });
-            const foundMove = moves.find(m => m.from === premove.from && m.to === premove.to);
-            if (!foundMove) {
+        if (turn === 'w' && premove) {
+            const ms = moves({ square: premove.from as Square, verbose: true }) as any[];
+            const ok = ms.find(m => m.from === premove.from && m.to === premove.to);
+            if (!ok) {
                 setPremove(null);
                 setPremoveSquares({});
                 return;
             }
 
             if (isPromotionMove(premove.from as Square, premove.to as Square)) {
-                setPromotionMove({ from: premove.from as Square, to: premove.to as Square, color: chessGame.turn });
+                setPromotionMove({ from: premove.from as Square, to: premove.to as Square, color: turn });
                 return;
             }
 
-            chessGame.move({ from: premove.from, to: premove.to, promotion: 'q' });
-            setOptionSquares({
-                [premove.from]: { background: 'rgba(250, 231, 49, 0.8)' },
-                [premove.to]: { background: 'rgba(250, 231, 49, 0.8)' },
-            });
+            applyMove({ from: premove.from, to: premove.to, promotion: 'q' });
             setPremove(null);
             setPremoveSquares({});
-            chessGame.updateData();
-            if (chessGame.getGameStatus() === 'white') {
-                setDialogWinGame(true);
-            }
+            updateData();
+            if (getGameStatus() === 'white') setDialogWinGame(true);
             setTimeout(makeRandomMove, 3000);
         }
-    }, [chessGame.turn, premove, setPremove, chessGame.move, chessGame.updateData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [turn, premove]); // ← только эти зависимости
+
+    useEffect(() => {
+        setAnimMs(promotionMove ? 0 : 300);
+    }, [promotionMove]);
 
     return (
         <HStack w="1150px" justify={'center'} gap={10}>
             <div className={'my-auto flex flex-col'}>
                 <PlayerRow />
-
-                {/* ➕ Обёртка: выключаем контекст-меню и тречим состояние кнопок мыши */}
                 <div
                     onContextMenu={(e) => e.preventDefault()}
                     onPointerDown={(e) => {
@@ -386,8 +366,8 @@ export const HomePage = () => {
                         }
                         if (e.button === 0) {
                             leftRef.current.down = true;
-                            leftRef.current.lock = null;         // сброс «закреплённого» квадрата
-                            leftRef.current.selectedOnce = false;// и флага одиночного select
+                            leftRef.current.lock = null;
+                            leftRef.current.selectedOnce = false;
                         }
                     }}
                     onPointerUp={(e) => {
@@ -419,7 +399,6 @@ export const HomePage = () => {
                         pieces={customPieces as any}
                         onSelect={onPromotionPieceSelect}
                         onClose={() => {
-                            // логика «отмены» как у тебя в CloseButton
                             setPremove(null);
                             setPremoveSquares({});
                             setPossibleMovesSquares({});
@@ -427,12 +406,9 @@ export const HomePage = () => {
                         }}
                     />
                 </div>
-
                 <PlayerRow />
             </div>
             <AnalyseTool />
-
-            {/* === PROMOTION OVERLAY (Tailwind, как в примере react-chessboard) === */}
         </HStack>
     );
-}
+};
