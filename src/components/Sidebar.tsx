@@ -14,7 +14,7 @@ export const Sidebar = () => {
         <ChakraLink as={RouterLink} to="/">
           Play online
         </ChakraLink>
-        <ChakraLink as={RouterLink} to="/">
+        <ChakraLink as={RouterLink} to="/play/computer">
           Play bots
         </ChakraLink>
         <ChakraLink as={RouterLink} to="/puzzles">

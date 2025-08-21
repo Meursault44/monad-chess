@@ -28,7 +28,6 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
       if (ctx.phase !== 'playing' || !ctx.atTip) return;
 
       const expected = puzzle.moves[idx];
-      console.log(expected);
       if (!expected) return; // решения закончились
 
       // чья очередь согласно expected?

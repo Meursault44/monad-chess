@@ -6,8 +6,11 @@ import { useDialogsStore } from '@/store/dialogs';
 import { useSoundEffects, useCustomPieces } from '@/hooks';
 import PromotionOverlay from '@/components/PromotionOverlay';
 import type { OpponentLogic, OpponentCtx } from '@/bot/useRandomOpponent';
+import { PieceHandlerArgs } from 'react-chessboard/dist/types';
 
 type SquaresStylesType = Partial<Record<Square, React.CSSProperties>>;
+
+type OnPieceDragType = ({ isSparePiece, piece, square }: PieceHandlerArgs) => void;
 
 const lichessRing = (color = '#ff0000', stroke = 6, sizePct = 95): React.CSSProperties => {
   const r = 50 - stroke / 2;
@@ -201,6 +204,7 @@ export default function ChessBoardWithLogic({
 
   // клики по клеткам (запрещаем, если партия не началась или не наш ход)
   function onSquareClick({ square, piece }: SquareHandlerArgs) {
+    console.log(square, piece);
     if (phase !== 'playing' || !isPlayerTurn()) return;
 
     setRcSquares({});
@@ -320,6 +324,12 @@ export default function ChessBoardWithLogic({
     }
   }
 
+  const onPieceDrag: OnPieceDragType = ({ square }) => {
+    if (phase !== 'playing') return;
+    setRcSquares({});
+    getMoveOptions(square);
+  };
+
   const chessboardOptions = {
     onPieceDrop,
     onSquareClick,
@@ -345,9 +355,7 @@ export default function ChessBoardWithLogic({
         };
       });
     },
-    onMouseOverSquare: (p: SquareHandlerArgs) => {
-      /* логика выделения/детекта стрелок оставлена без изменений и упрощена */
-    },
+    onPieceDrag,
     pieces: customPieces,
     animationDuration: animMs,
     boardOrientation: playerSide === 'b' ? 'black' : 'white',

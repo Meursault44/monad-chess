@@ -28,11 +28,16 @@ export const PuzzlesPage = () => {
   const { setDialogSolvedPuzzle } = useDialogsStore();
 
   const startFromFen = useChessStore((s) => s.startFromFen);
+  const resetGame = useChessStore((s) => s.resetGame);
 
   useEffect(() => {
     if (isSolved) {
       setDialogSolvedPuzzle(true);
     }
+
+    return () => {
+      resetGame();
+    };
   }, [isSolved]);
 
   return (
