@@ -1,12 +1,69 @@
-import { useQuery, useMutation } from "@tanstack/react-query"
-import { getRandomPuzzle, checkPuzzleMove } from "@/api/puzzles"
+import { useQuery } from '@tanstack/react-query';
+import { getRandomPuzzle } from '@/api/puzzles';
+import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
+import { Button } from '@chakra-ui/react';
+import { usePuzzleEngine } from '@/hooks/usePuzzleEngine';
+import { useChessStore } from '@/store/chess.ts';
+import { useEffect } from 'react';
+import { useDialogsStore } from '@/store/dialogs.ts';
+
+function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
+  if (!fen) return '';
+  const botSide = fen.split(' ')[1] as 'w' | 'b';
+  return botSide === 'w' ? 'b' : 'w';
+}
 
 export const PuzzlesPage = () => {
-    const { data: puzzle, isLoading, refetch } = useQuery({
-        queryKey: ["puzzle"],
-        queryFn: getRandomPuzzle,
-    })
-    console.log(puzzle)
+  const { data: puzzle, refetch } = useQuery({
+    queryKey: ['puzzle'],
+    queryFn: getRandomPuzzle,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity, // данные не «протухают»
+    gcTime: Infinity, // не удаляются из кэша
+  });
+  const side = sideToMoveFromFen(puzzle?.fen);
+  const { validateMove, opponentLogic, isSolved, onPlayerAccepted } = usePuzzleEngine(puzzle, side);
+  const { setDialogSolvedPuzzle } = useDialogsStore();
 
-    return <h1>PuzzlesPage</h1>
-}
+  const startFromFen = useChessStore((s) => s.startFromFen);
+
+  useEffect(() => {
+    if (isSolved) {
+      setDialogSolvedPuzzle(true);
+    }
+  }, [isSolved]);
+
+  return (
+    <div className="flex w-[1070px] gap-6">
+      <ChessBoardWrapper
+        onOpponentTurn={opponentLogic}
+        validateMove={validateMove}
+        onPlayerAccepted={onPlayerAccepted}
+      />
+      <Button
+        onClick={() => {
+          if (!puzzle?.fen) return;
+          const sideNow = sideToMoveFromFen(puzzle.fen);
+          startFromFen(puzzle.fen, sideNow);
+        }}
+      >
+        Start
+      </Button>
+      <Button
+        onClick={async () => {
+          const res = await refetch(); // дождались новые данные
+          const next = res.data;
+          if (next?.fen) {
+            const sideNext = sideToMoveFromFen(next.fen);
+            startFromFen(next.fen, sideNext); // теперь стартуем именно НОВЫЙ пазл
+          }
+        }}
+      >
+        Next Puzzle
+      </Button>
+      <div className={'text-white'}>{side === 'w' ? 'White move' : 'Black move'}</div>
+    </div>
+  );
+};

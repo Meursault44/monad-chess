@@ -1,2 +1,2 @@
 export { useSoundEffects } from './useSoundEffects.ts';
-export { useCustomPieces } from './useCustomPieces.tsx'
+export { useCustomPieces } from './useCustomPieces.tsx';
