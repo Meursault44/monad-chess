@@ -3,7 +3,6 @@ import { Button } from '@chakra-ui/react';
 
 export const AuthButtons = () => {
   const { ready, authenticated, user, login, logout } = usePrivy();
-  console.log(user);
   if (!ready) return null;
 
   return authenticated ? (

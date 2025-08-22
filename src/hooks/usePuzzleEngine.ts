@@ -1,24 +1,63 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { OpponentLogic } from '@/hooks/useRandomOpponent';
+import { useMutation } from '@tanstack/react-query';
+import { checkPuzzleMove } from '@/api/puzzles.ts';
+import { useChessStore } from '@/store/chess.ts';
+import { useDialogsStore } from '@/store/dialogs.ts';
 
 export type LichessPuzzle = {
   id: string;
   fen: string;
-  moves: string[]; // UCI: ['f6g4','e7f8','g8f8','d1d8'] начиная с side-to-move в FEN
+  solution: string[]; // UCI: ['f6g4','e7f8','g8f8','d1d8'] начиная с side-to-move в FEN
   gameUrl?: string;
 };
 
 export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
   const [idx, setIdx] = useState(0); // индекс следующего правильного UCI в puzzle.moves
+  const [idxBack, setIdxBack] = useState(0);
+
+  const setPhase = useChessStore((s) => s.setPhase);
+  const undo = useChessStore((s) => s.undo);
+  const { setDialogSolvedPuzzle } = useDialogsStore();
+  const { mutate } = useMutation({
+    mutationFn: checkPuzzleMove,
+  });
+  console.log(idx);
+  console.log(idxBack);
 
   // guard для доски
   const validateMove = useCallback(
     (uci: string) => {
-      if (!puzzle) return true;
-      const expected = puzzle.moves[idx];
-      return uci === expected;
+      if (!puzzle?.solution) return false;
+
+      mutate(
+        { id: puzzle?.id, move: uci, step: idxBack },
+        {
+          onSuccess: (res) => {
+            if (res?.finished) {
+              setPhase('idle');
+              setIdx(0);
+              setIdxBack(0);
+              setDialogSolvedPuzzle(true);
+            } else if (res?.correct) {
+              console.log(res);
+              setIdxBack((i) => i + 1);
+            } else if (!res?.correct && idx > idxBack) {
+              setIdx(idxBack);
+              undo();
+            }
+          },
+        },
+      );
+
+      const expected = puzzle.solution[idx];
+      if (uci === expected) {
+        setIdx((i) => i + 1);
+        return true;
+      }
+      return false;
     },
-    [puzzle?.id, idx],
+    [puzzle?.id, idx, idxBack, setIdxBack, setIdx, setPhase],
   );
 
   // логика «оппонента»: если следующий ход по скрипту принадлежит текущему turn и он не игрок, делаем его
@@ -27,7 +66,10 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
       if (!puzzle) return;
       if (ctx.phase !== 'playing' || !ctx.atTip) return;
 
-      const expected = puzzle.moves[idx];
+      const expected = puzzle.solution[idx];
+      console.log(puzzle);
+      console.log(idx);
+      console.log(expected);
       if (!expected) return; // решения закончились
 
       // чья очередь согласно expected?
@@ -42,27 +84,20 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
       // Если idx чётный — ходит сторона, указанная в FEN на старте. Доверимся движку: просто делаем «наш» expected,
       // когда ход не игрока.
       if (ctx.playerSide && ctx.turn !== ctx.playerSide) {
-        console.log(ctx.playerSide);
         const mv = ctx.applyMove({ from, to, promotion: promo });
         ctx.updateData();
         if (mv) ctx.playMoveOpponentSfx();
-        console.log(idx);
         setIdx((i) => i + 1);
+        setIdxBack((i) => i + 1);
       }
     },
     [puzzle, idx],
   );
 
-  useEffect(() => {
+  const clearState = useCallback(() => {
     setIdx(0);
-  }, [puzzle?.id, setIdx]);
+    setIdxBack(0);
+  }, [setIdx, setIdxBack]);
 
-  // Когда игрок успешно сделал правильный ход — увеличим idx (сработает валидация на доске, см. ниже)
-  const onPlayerAccepted = useCallback(() => {
-    setIdx((i) => i + 1);
-  }, []);
-
-  const isSolved = useMemo(() => !!puzzle && idx >= puzzle.moves.length, [puzzle?.id, idx]);
-
-  return { validateMove, opponentLogic, isSolved, onPlayerAccepted };
+  return { validateMove, opponentLogic, clearState };
 }

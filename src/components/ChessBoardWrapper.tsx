@@ -32,12 +32,10 @@ function toUci(from: string, to: string, promo?: 'q' | 'r' | 'b' | 'n') {
 export default function ChessBoardWithLogic({
   onOpponentTurn,
   validateMove,
-  onPlayerAccepted,
   showDialogWinGame,
 }: {
   onOpponentTurn?: OpponentLogic;
-  validateMove?: (uci: string) => boolean;
-  onPlayerAccepted?: () => void;
+  validateMove?: (uci: string) => Promise<any>;
   showDialogWinGame?: boolean;
 }) {
   // --- Store API ---
@@ -94,7 +92,6 @@ export default function ChessBoardWithLogic({
   // === ВЕСЬ КОД ПРОТИВНИКА УДАЛЕН ИЗ КОМПОНЕНТА ===
   // Вызываем переданную логику с контекстом. Если пропс не указан — ничего не делаем.
   useEffect(() => {
-    console.log(turn);
     if (!onOpponentTurn) return;
     const ctx: OpponentCtx = {
       phase,
@@ -108,7 +105,6 @@ export default function ChessBoardWithLogic({
       getGameStatus,
       playMoveOpponentSfx,
     };
-    console.log(ctx);
     onOpponentTurn(ctx);
   }, [
     onOpponentTurn,
@@ -183,13 +179,17 @@ export default function ChessBoardWithLogic({
   function onPromotionPieceSelect(piece: 'q' | 'r' | 'b' | 'n') {
     if (!promotionMove) return;
     try {
+      const uciTry = toUci(promotionMove.from, promotionMove.to, piece);
+      if (validateMove && !validateMove(uciTry)) {
+        playIllegalSfx();
+        return; // просто игнор
+      }
       const moveInfo = applyMove({
         from: promotionMove.from,
         to: promotionMove.to,
         promotion: piece,
       });
       updateData();
-      onPlayerAccepted?.();
 
       setPossibleMovesSquares({});
       setRcSquares({});
@@ -204,11 +204,9 @@ export default function ChessBoardWithLogic({
 
   // клики по клеткам (запрещаем, если партия не началась или не наш ход)
   function onSquareClick({ square, piece }: SquareHandlerArgs) {
-    console.log(square, piece);
     if (phase !== 'playing' || !isPlayerTurn()) return;
 
     setRcSquares({});
-    console.log(square, piece);
 
     if (!moveFrom && piece) {
       const has = getMoveOptions(square as Square);
@@ -232,7 +230,6 @@ export default function ChessBoardWithLogic({
 
     const uciTry = toUci(moveFrom, square);
     if (validateMove && !validateMove(uciTry)) {
-      // неверный ход в режиме пазла
       playIllegalSfx();
       return; // просто игнор
     }
@@ -240,7 +237,6 @@ export default function ChessBoardWithLogic({
     try {
       const moveInfo = applyMove({ from: moveFrom, to: square, promotion: 'q' });
       updateData();
-      onPlayerAccepted?.();
 
       playMoveSound({ moveInfo, isCheck });
       setPossibleMovesSquares({});
@@ -259,7 +255,7 @@ export default function ChessBoardWithLogic({
 
   // dnd (тоже блокируем до старта/в чужой ход)
   function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
-    if (!targetSquare) return false;
+    if (!targetSquare || sourceSquare === targetSquare) return false;
     if (phase !== 'playing') return false;
 
     if (isPromotionMove(sourceSquare as Square, targetSquare as Square)) {
@@ -270,7 +266,7 @@ export default function ChessBoardWithLogic({
     const uciTry = toUci(sourceSquare, targetSquare);
     if (validateMove && !validateMove(uciTry)) {
       playIllegalSfx();
-      return false;
+      return; // просто игнор
     }
 
     if (turn !== playerSide) {
@@ -289,7 +285,6 @@ export default function ChessBoardWithLogic({
       if (!moveInfo) throw new Error('Invalid move');
 
       updateData();
-      onPlayerAccepted?.();
 
       setMoveFrom('');
       setPossibleMovesSquares({});

@@ -49,6 +49,7 @@ type ChessStoreActions = {
   isPlayerTurn: () => boolean;
   resetGame: () => void;
   startFromFen: (fen: string, side?: Color) => void;
+  setPhase: (phase: GamePhase) => void;
 };
 
 type ChessStore = ChessStoreState & ChessStoreActions;
@@ -242,6 +243,9 @@ export const useChessStore = create<ChessStore>()((set, get) => {
         initialFen: game.fen(), // именно этот fen как «база»
       });
       get().updateData();
+    },
+    setPhase: (phase) => {
+      set({ phase });
     },
   };
 });
