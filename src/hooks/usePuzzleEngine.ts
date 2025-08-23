@@ -17,11 +17,12 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
   const [idxBack, setIdxBack] = useState(0);
 
   const setPhase = useChessStore((s) => s.setPhase);
-  const undo = useChessStore((s) => s.undo);
+  const undoHard = useChessStore((s) => s.undoHard);
   const { setDialogSolvedPuzzle } = useDialogsStore();
   const { mutate } = useMutation({
     mutationFn: checkPuzzleMove,
   });
+
   console.log(idx);
   console.log(idxBack);
 
@@ -44,7 +45,7 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
               setIdxBack((i) => i + 1);
             } else if (!res?.correct && idx > idxBack) {
               setIdx(idxBack);
-              undo();
+              undoHard();
             }
           },
         },
@@ -67,9 +68,6 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
       if (ctx.phase !== 'playing' || !ctx.atTip) return;
 
       const expected = puzzle.solution[idx];
-      console.log(puzzle);
-      console.log(idx);
-      console.log(expected);
       if (!expected) return; // решения закончились
 
       // чья очередь согласно expected?
@@ -83,7 +81,7 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
       // когда наступает ход соперника?
       // Если idx чётный — ходит сторона, указанная в FEN на старте. Доверимся движку: просто делаем «наш» expected,
       // когда ход не игрока.
-      if (ctx.playerSide && ctx.turn !== ctx.playerSide) {
+      if (ctx.playerSide && ctx.turn !== ctx.playerSide && idx % 2 === 0) {
         const mv = ctx.applyMove({ from, to, promotion: promo });
         ctx.updateData();
         if (mv) ctx.playMoveOpponentSfx();

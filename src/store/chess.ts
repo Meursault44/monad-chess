@@ -38,6 +38,7 @@ type ChessStoreActions = {
   goToPly: (ply: number) => void;
   findPiece: FindPieceFn;
   undo: (n?: number) => number;
+  undoHard: (n?: number) => number;
   redo: (n?: number) => number;
   loadFen: (fen: string) => void;
   getVisibleVerbose: () => any[];
@@ -158,6 +159,13 @@ export const useChessStore = create<ChessStore>()((set, get) => {
       const want = Math.max(0, currentPly - n);
       rebuildToPly(want);
       return currentPly - want;
+    },
+
+    undoHard: (n = 1) => {
+      const { currentPly, timelineSan } = get();
+      const newPly = Math.max(0, currentPly - n);
+      set({ timelineSan: timelineSan.slice(0, newPly) });
+      rebuildToPly(newPly);
     },
 
     redo: (n = 1) => {

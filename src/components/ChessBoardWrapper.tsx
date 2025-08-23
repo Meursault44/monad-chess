@@ -1,12 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Chessboard, type SquareHandlerArgs, type PieceDropHandlerArgs } from 'react-chessboard';
 import type { Square } from 'chess.js';
 import { useChessStore } from '@/store/chess';
 import { useDialogsStore } from '@/store/dialogs';
 import { useSoundEffects, useCustomPieces } from '@/hooks';
 import PromotionOverlay from '@/components/PromotionOverlay';
-import type { OpponentLogic, OpponentCtx } from '@/bot/useRandomOpponent';
-import { PieceHandlerArgs } from 'react-chessboard/dist/types';
+import type { OpponentLogic, OpponentCtx } from '@/hooks/useRandomOpponent';
+import { type PieceHandlerArgs } from 'react-chessboard';
 
 type SquaresStylesType = Partial<Record<Square, React.CSSProperties>>;
 
@@ -29,20 +29,81 @@ function toUci(from: string, to: string, promo?: 'q' | 'r' | 'b' | 'n') {
   return `${from}${to}${promo ?? ''}`;
 }
 
+// helper: SVG “крестик” в кружке как data URL
+const makeErrorBadgeDataUrl = (fill = '#ef4444') => {
+  const svg = `
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
+    <circle cx='12' cy='12' r='12' fill='${fill}'/>
+    <path d='M8 8l8 8M16 8l-8 8' stroke='white' stroke-width='2' stroke-linecap='round'/>
+  </svg>`;
+  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+};
+
+const makeSuccessBadgeDataUrl = (fill = '#22c55e') => {
+  const svg = `
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
+    <circle cx='12' cy='12' r='12' fill='${fill}'/>
+    <path d='M7 12.5l3.5 3.5L17 9'
+      fill='none' stroke='white' stroke-width='2.5'
+      stroke-linecap='round' stroke-linejoin='round'/>
+  </svg>`;
+  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+};
+
+// helper: генерируем CSS для нужного id
+const makeBadgeCss = (
+  square?: string,
+  variant?: string,
+  opts?: { top?: number; right?: number; size?: number },
+) => {
+  if (!square) return '';
+  const top = opts?.top ?? 12; // px: насколько “выезжает” сверху
+  const right = opts?.right ?? 12; // px: насколько “выезжает” справа
+  const size = opts?.size ?? 34; // px: диаметр бейджа
+  const bg = variant === 'success' ? makeSuccessBadgeDataUrl() : makeErrorBadgeDataUrl();
+
+  const id = `click-or-drag-to-move-square-${square}`;
+  return `
+    /* сам квадрат должен быть контейнером для ::after */
+    #${id} { position: relative; overflow: visible !important; }
+
+    /* бейдж */
+    #${id}::after {
+      content: "";
+      position: absolute;
+      top: -${top}px;
+      right: -${right}px;
+      width: ${size}px;
+      height: ${size}px;
+      background-image: ${bg};
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center;
+      pointer-events: none;
+      z-index: 30;
+    }
+  `;
+};
+
+type CustomCss = string | string[];
+
 export default function ChessBoardWithLogic({
   onOpponentTurn,
   validateMove,
   showDialogWinGame,
+  mode,
 }: {
   onOpponentTurn?: OpponentLogic;
-  validateMove?: (uci: string) => Promise<any>;
+  validateMove?: (uci: string) => boolean;
   showDialogWinGame?: boolean;
+  mode?: 'puzzle' | 'game';
 }) {
   // --- Store API ---
   const position = useChessStore((s) => s.position);
   const turn = useChessStore((s) => s.turn);
   const isCheck = useChessStore((s) => s.isCheck);
   const currentPly = useChessStore((s) => s.currentPly);
+  const undoHard = useChessStore((s) => s.undoHard);
 
   const moves = useChessStore((s) => s.moves);
   const applyMove = useChessStore((s) => s.applyMove);
@@ -64,12 +125,14 @@ export default function ChessBoardWithLogic({
 
   // --- Local UI state ---
   const [animMs, setAnimMs] = useState(300);
-  const [moveFrom, setMoveFrom] = useState('');
+  const [moveFrom, setMoveFrom] = useState<Square | null>(null);
   const [possibleMovesSquares, setPossibleMovesSquares] = useState<SquaresStylesType>({});
   const [premoveSquares, setPremoveSquares] = useState<SquaresStylesType>({});
   const [premove, setPremove] = useState<{ from: string; to: string } | null>(null);
   const [blinkSquares, setBlinkSquares] = useState<SquaresStylesType>({});
+  const [puzzleMovesSquares, setPuzzleMovesSquares] = useState<SquaresStylesType>({});
   const [rcSquares, setRcSquares] = useState<SquaresStylesType>({});
+  const [badgeCss, setBadgeCss] = useState<CustomCss>('');
 
   const lastMove = getLastMoveSquares(); // { from, to } | null
 
@@ -88,6 +151,8 @@ export default function ChessBoardWithLogic({
     to: Square;
     color: 'w' | 'b';
   } | null>(null);
+
+  const [isLock, setIsLock] = useState(false);
 
   // === ВЕСЬ КОД ПРОТИВНИКА УДАЛЕН ИЗ КОМПОНЕНТА ===
   // Вызываем переданную логику с контекстом. Если пропс не указан — ничего не делаем.
@@ -151,6 +216,25 @@ export default function ChessBoardWithLogic({
     return true;
   }
 
+  const highlightingTheKingUnderCheck = useCallback(() => {
+    const sq = findPiece({ color: turn, type: 'k' });
+    if (sq) {
+      let count = 0;
+      const id = setInterval(() => {
+        setBlinkSquares((prev) =>
+          count % 2 === 0
+            ? { ...prev, [sq]: { background: 'rgba(235, 97, 80, .8)' } }
+            : (() => {
+                const { [sq]: _, ...rest } = prev;
+                return rest;
+              })(),
+        );
+        count++;
+        if (count > 6) clearInterval(id);
+      }, 250);
+    }
+  }, [findPiece, setBlinkSquares]);
+
   // промо helpers
   function findLegalMove(from: Square, to: Square) {
     const legal = moves({ square: from as Square, verbose: true }) as any[];
@@ -198,9 +282,68 @@ export default function ChessBoardWithLogic({
       if (getGameStatus() === playerSide && showDialogWinGame) setDialogWinGame(true);
     } finally {
       setPromotionMove(null);
-      setMoveFrom('');
+      setMoveFrom(null);
     }
   }
+
+  const tryPuzzleMove = (from: Square, to: Square) => {
+    const uciTry = toUci(from, to);
+    const isValid = validateMove?.(uciTry);
+
+    if (isValid) {
+      try {
+        const moveInfo = applyMove({ from: from, to: to, promotion: 'q' });
+        if (!moveInfo) throw new Error('Invalid move');
+
+        updateData();
+
+        setMoveFrom(null);
+        setPossibleMovesSquares({});
+
+        playMoveSound({ moveInfo, isCheck });
+        setBadgeCss(makeBadgeCss(to, 'success'));
+        setPuzzleMovesSquares({
+          [from]: { backgroundColor: 'rgba(172, 206, 89, .85)' },
+          [to]: { backgroundColor: 'rgba(172, 206, 89, .85)' },
+        });
+        if (getGameStatus() === playerSide && showDialogWinGame) {
+          setDialogWinGame(true);
+        }
+        return true;
+      } catch {
+        playIllegalSfx();
+        if (isCheck) {
+          highlightingTheKingUnderCheck();
+        }
+        return false;
+      }
+    } else {
+      try {
+        const moveInfo = applyMove({ from: from, to: to, promotion: 'q' });
+        if (!moveInfo) throw new Error('Invalid move');
+
+        updateData();
+
+        setMoveFrom(null);
+        setPossibleMovesSquares({});
+
+        playMoveSound({ moveInfo, isCheck });
+        setBadgeCss(makeBadgeCss(to, 'error'));
+        setPuzzleMovesSquares({
+          [from]: { backgroundColor: 'rgba(255, 119, 105, .8)' },
+          [to]: { backgroundColor: 'rgba(255, 119, 105, .8)' },
+        });
+        setIsLock(true);
+        return true;
+      } catch {
+        playIllegalSfx();
+        if (isCheck) {
+          highlightingTheKingUnderCheck();
+        }
+        return false;
+      }
+    }
+  };
 
   // клики по клеткам (запрещаем, если партия не началась или не наш ход)
   function onSquareClick({ square, piece }: SquareHandlerArgs) {
@@ -219,19 +362,13 @@ export default function ChessBoardWithLogic({
 
     if (!ok) {
       const has = getMoveOptions(square as Square);
-      setMoveFrom(has ? square : '');
+      setMoveFrom(has ? square : null);
       return;
     }
 
     if (isPromotionMove(moveFrom as Square, square as Square)) {
       setPromotionMove({ from: moveFrom as Square, to: square as Square, color: turn });
       return;
-    }
-
-    const uciTry = toUci(moveFrom, square);
-    if (validateMove && !validateMove(uciTry)) {
-      playIllegalSfx();
-      return; // просто игнор
     }
 
     try {
@@ -245,28 +382,48 @@ export default function ChessBoardWithLogic({
         setDialogWinGame(true);
       }
     } catch {
+      console.log('err');
+    }
+
+    setMoveFrom(null);
+  }
+
+  const onSquareClickPuzzle = ({ square, piece }: SquareHandlerArgs) => {
+    if (phase !== 'playing' || !isPlayerTurn()) return;
+
+    setRcSquares({});
+
+    if (!moveFrom && piece) {
       const has = getMoveOptions(square as Square);
       if (has) setMoveFrom(square);
       return;
     }
 
-    setMoveFrom('');
-  }
+    const ms = moves({ square: moveFrom as Square, verbose: true }) as any[];
+    const ok = ms.find((m) => m.from === moveFrom && m.to === square);
+
+    if (!ok) {
+      const has = getMoveOptions(square as Square);
+      setMoveFrom(has ? square : null);
+      return;
+    }
+
+    if (isPromotionMove(moveFrom as Square, square as Square)) {
+      setPromotionMove({ from: moveFrom as Square, to: square as Square, color: turn });
+      return;
+    }
+
+    tryPuzzleMove(moveFrom, square);
+    setMoveFrom(null);
+  };
 
   // dnd (тоже блокируем до старта/в чужой ход)
   function onPieceDrop({ sourceSquare, targetSquare }: PieceDropHandlerArgs) {
-    if (!targetSquare || sourceSquare === targetSquare) return false;
-    if (phase !== 'playing') return false;
+    if (!targetSquare || sourceSquare === targetSquare || phase !== 'playing') return false;
 
     if (isPromotionMove(sourceSquare as Square, targetSquare as Square)) {
       setPromotionMove({ from: sourceSquare as Square, to: targetSquare as Square, color: turn });
       return true;
-    }
-
-    const uciTry = toUci(sourceSquare, targetSquare);
-    if (validateMove && !validateMove(uciTry)) {
-      playIllegalSfx();
-      return; // просто игнор
     }
 
     if (turn !== playerSide) {
@@ -286,7 +443,7 @@ export default function ChessBoardWithLogic({
 
       updateData();
 
-      setMoveFrom('');
+      setMoveFrom(null);
       setPossibleMovesSquares({});
 
       playMoveSound({ moveInfo, isCheck });
@@ -295,39 +452,33 @@ export default function ChessBoardWithLogic({
       }
       return true;
     } catch {
-      if (targetSquare === sourceSquare) return false;
       playIllegalSfx();
       if (isCheck) {
-        const sq = findPiece({ color: turn, type: 'k' });
-        if (sq) {
-          let count = 0;
-          const id = setInterval(() => {
-            setBlinkSquares((prev) =>
-              count % 2 === 0
-                ? { ...prev, [sq]: { background: 'rgba(235, 97, 80, .8)' } }
-                : (() => {
-                    const { [sq]: _, ...rest } = prev;
-                    return rest;
-                  })(),
-            );
-            count++;
-            if (count > 6) clearInterval(id);
-          }, 250);
-        }
+        highlightingTheKingUnderCheck();
       }
       return false;
     }
   }
 
+  const onPieceDropPuzzle = ({ sourceSquare, targetSquare }: PieceDropHandlerArgs) => {
+    if (!targetSquare || sourceSquare === targetSquare || phase !== 'playing') return false;
+
+    if (isPromotionMove(sourceSquare as Square, targetSquare as Square)) {
+      setPromotionMove({ from: sourceSquare as Square, to: targetSquare as Square, color: turn });
+      return true;
+    }
+
+    return tryPuzzleMove(sourceSquare, targetSquare);
+  };
   const onPieceDrag: OnPieceDragType = ({ square }) => {
-    if (phase !== 'playing') return;
+    if (phase !== 'playing' || !square) return;
     setRcSquares({});
     getMoveOptions(square);
   };
 
   const chessboardOptions = {
-    onPieceDrop,
-    onSquareClick,
+    onPieceDrop: mode === 'puzzle' ? onPieceDropPuzzle : onPieceDrop,
+    onSquareClick: mode === 'puzzle' ? onSquareClickPuzzle : onSquareClick,
     position,
     squareStyles: {
       ...lastMoveStyles,
@@ -335,6 +486,7 @@ export default function ChessBoardWithLogic({
       ...premoveSquares,
       ...rcSquares,
       ...blinkSquares,
+      ...puzzleMovesSquares,
     },
     onSquareRightClick: (data: any) => {
       const sq = data?.square as Square | undefined;
@@ -389,6 +541,17 @@ export default function ChessBoardWithLogic({
     setAnimMs(promotionMove ? 0 : 300);
   }, [promotionMove]);
 
+  useEffect(() => {
+    if (currentPly === 0) {
+      setPuzzleMovesSquares({});
+      setPossibleMovesSquares({});
+      setRcSquares({});
+      setPremoveSquares({});
+      setBlinkSquares({});
+      setBadgeCss('');
+    }
+  }, [currentPly]);
+
   return (
     <div
       onContextMenu={(e) => e.preventDefault()}
@@ -402,7 +565,28 @@ export default function ChessBoardWithLogic({
         margin: '10px auto',
       }}
     >
+      <style>{badgeCss}</style>
       <Chessboard options={chessboardOptions} />
+      {isLock && (
+        <div
+          onClick={(e) => {
+            // откат последнего хода и снятие блокировки
+            e.stopPropagation();
+            undoHard?.(1);
+            updateData();
+            setPuzzleMovesSquares({});
+            setIsLock(false);
+            setBadgeCss('');
+          }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 50,
+            cursor: 'pointer',
+          }}
+          aria-label="Wrong move overlay — click to undo"
+        />
+      )}
       <PromotionOverlay
         move={promotionMove}
         left={promotionSquareLeft}

@@ -28,7 +28,11 @@ export const PuzzlesPage = () => {
 
   return (
     <div className="flex w-[1170px] gap-6">
-      <ChessBoardWrapper onOpponentTurn={opponentLogic} validateMove={validateMove} />
+      <ChessBoardWrapper
+        onOpponentTurn={opponentLogic}
+        validateMove={validateMove}
+        mode={'puzzle'}
+      />
       <div className="my-auto flex h-[860px] w-[300px] shrink-0 flex-col bg-[#4E3371]">
         <Button
           onClick={async () => {
