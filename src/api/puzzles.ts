@@ -1,3 +1,5 @@
+import { apiFetch } from '@/api/client';
+
 export type Puzzle = {
   id: string;
   fen: string;
@@ -6,10 +8,8 @@ export type Puzzle = {
   themes: string[];
 };
 
-const API_URL = import.meta.env['VITE_API_BASE_URL'];
-
 export async function getRandomPuzzle(): Promise<Puzzle> {
-  const res = await fetch(`${API_URL}/puzzles/random`);
+  const res = await apiFetch(`/puzzles/random`);
   if (!res.ok) throw new Error('Failed to fetch puzzle');
   return res.json();
 }
@@ -23,7 +23,7 @@ export async function checkPuzzleMove({
   move: string;
   step: number;
 }) {
-  const res = await fetch(`${API_URL}/puzzles/check`, {
+  const res = await apiFetch(`/puzzles/check`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ move, step, id }),
