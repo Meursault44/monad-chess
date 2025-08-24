@@ -563,6 +563,7 @@ export default function ChessBoardWithLogic({
         msUserSelect: 'none',
         position: 'relative',
         margin: '10px auto',
+        width: '900px',
       }}
     >
       <style>{badgeCss}</style>

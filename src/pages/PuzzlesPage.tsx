@@ -4,6 +4,7 @@ import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
 import { Button } from '@chakra-ui/react';
 import { usePuzzleEngine } from '@/hooks/usePuzzleEngine';
 import { useChessStore } from '@/store/chess.ts';
+import { useAuthStore } from '@/store/auth.ts';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -25,9 +26,10 @@ export const PuzzlesPage = () => {
 
   const startFromFen = useChessStore((s) => s.startFromFen);
   const phase = useChessStore((s) => s.phase);
+  const user = useAuthStore((s) => s.user);
 
   return (
-    <div className="flex w-[1170px] gap-6">
+    <div className="flex gap-6">
       <ChessBoardWrapper
         onOpponentTurn={opponentLogic}
         validateMove={validateMove}
