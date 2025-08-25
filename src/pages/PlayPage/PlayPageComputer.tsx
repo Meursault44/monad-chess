@@ -16,7 +16,7 @@ export const PlayPageComputer = () => {
   }, []);
 
   return (
-    <HStack w="1150px" justify={'center'} gap={10}>
+    <HStack justify={'center'} gap={'3rem'}>
       <div className="my-auto flex flex-col">
         <PlayerRow />
         <ChessBoardWrapper onOpponentTurn={bot} showDialogWinGame={true} />

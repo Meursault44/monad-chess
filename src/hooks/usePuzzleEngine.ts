@@ -23,9 +23,6 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
     mutationFn: checkPuzzleMove,
   });
 
-  console.log(idx);
-  console.log(idxBack);
-
   // guard для доски
   const validateMove = useCallback(
     (uci: string) => {

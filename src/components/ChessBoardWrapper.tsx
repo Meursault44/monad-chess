@@ -506,8 +506,8 @@ export default function ChessBoardWithLogic({
     pieces: customPieces,
     animationDuration: animMs,
     boardOrientation: playerSide === 'b' ? 'black' : 'white',
-    darkSquareStyle: { backgroundColor: '#9778B4' },
-    lightSquareStyle: { backgroundColor: '#E7DBF0' },
+    darkSquareStyle: { backgroundColor: '#4F4372' },
+    lightSquareStyle: { backgroundColor: '#D9D9D9' },
     id: 'click-or-drag-to-move',
   } as const;
 
@@ -562,8 +562,9 @@ export default function ChessBoardWithLogic({
         MozUserSelect: 'none',
         msUserSelect: 'none',
         position: 'relative',
-        margin: '10px auto',
-        width: '900px',
+        margin: 'auto',
+        width: '90vh',
+        height: '90vh',
       }}
     >
       <style>{badgeCss}</style>

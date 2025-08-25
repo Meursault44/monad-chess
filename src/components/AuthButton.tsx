@@ -6,12 +6,11 @@ export const AuthButtons = () => {
   if (!ready) return null;
 
   return authenticated ? (
-    <div className={'flex flex-col gap-2'}>
-      <div>Hi, {user?.email?.address ?? user?.wallet?.address}</div>
-      <Button onClick={logout}>Logout</Button>
-    </div>
+    <Button onClick={logout} m={'40px 25px'} h={'54px'}>
+      Logout
+    </Button>
   ) : (
-    <Button className={'h-[50px] bg-amber-50'} onClick={login}>
+    <Button m={'40px 25px'} h={'54px'} onClick={login}>
       Login
     </Button>
   );
