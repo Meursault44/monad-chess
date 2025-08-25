@@ -4,6 +4,7 @@ import { HomePage, PuzzlesPage, PlayPageComputer } from '@/pages';
 import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useRef } from 'react';
 import { useLoginMutation } from '@/api/auth';
+import { getAccessToken } from '@/store/auth.ts';
 
 function App() {
   const { ready, authenticated, user } = usePrivy();
@@ -12,7 +13,7 @@ function App() {
 
   useEffect(() => {
     if (didLoginRef.current) return;
-    if (authenticated && ready && user?.wallet?.address) {
+    if (authenticated && ready && user?.wallet?.address && !getAccessToken()) {
       didLoginRef.current = true;
       mutateAsync({ address: user.wallet.address }).catch((e) => {
         console.error('Login mutation error', e);

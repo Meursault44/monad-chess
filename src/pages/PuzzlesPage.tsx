@@ -55,7 +55,7 @@ export const PuzzlesPage = () => {
           <Heading color={'white'}>Puzzles</Heading>
         </HStack>
         <VStack alignItems={'flex-start'}>
-          <Heading color={'white'}>490</Heading>
+          <Heading color={'white'}>{user?.puzzle_rating || ''}</Heading>
           <Progress.Root defaultValue={30} minW="240px">
             <Progress.Track>
               <Progress.Range bg={'#836EF9'} />

@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { checkPuzzleMove } from '@/api/puzzles.ts';
 import { useChessStore } from '@/store/chess.ts';
 import { useDialogsStore } from '@/store/dialogs.ts';
+import { useAuthStore } from '@/store/auth.ts';
 
 export type LichessPuzzle = {
   id: string;
@@ -18,6 +19,8 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
 
   const setPhase = useChessStore((s) => s.setPhase);
   const undoHard = useChessStore((s) => s.undoHard);
+  const setPuzzleRating = useAuthStore((s) => s.setPuzzleRating);
+
   const { setDialogSolvedPuzzle } = useDialogsStore();
   const { mutate } = useMutation({
     mutationFn: checkPuzzleMove,
@@ -37,12 +40,15 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
               setIdx(0);
               setIdxBack(0);
               setDialogSolvedPuzzle(true);
+              setPuzzleRating(res.new_rating);
             } else if (res?.correct) {
-              console.log(res);
               setIdxBack((i) => i + 1);
-            } else if (!res?.correct && idx > idxBack) {
-              setIdx(idxBack);
-              undoHard();
+            } else if (!res?.correct) {
+              setPuzzleRating(res.new_rating);
+              if (idx > idxBack) {
+                setIdx(idxBack);
+                undoHard();
+              }
             }
           },
         },

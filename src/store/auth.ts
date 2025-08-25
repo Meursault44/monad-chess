@@ -14,15 +14,20 @@ interface AuthState {
   accessToken: string | null;
   setAuth: (p: { user: User; accessToken: string }) => void;
   setAccessToken: (token: string | null) => void;
+  setPuzzleRating: (rating: number) => void;
   clear: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       setAuth: ({ user, accessToken }) => set({ user, accessToken }),
+      setPuzzleRating: (rating) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, puzzle_rating: rating } : state.user,
+        })),
       setAccessToken: (token) => set({ accessToken: token }),
       clear: () => set({ user: null, accessToken: null }),
     }),
