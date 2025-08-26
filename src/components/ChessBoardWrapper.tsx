@@ -289,6 +289,12 @@ export default function ChessBoardWithLogic({
   }
 
   const tryPuzzleMove = (from: Square, to: Square) => {
+    const currentMoves = moves({ square: from as Square, verbose: true });
+    if (!currentMoves.some((m) => m.to === to)) {
+      playIllegalSfx();
+      return;
+    }
+
     const uciTry = toUci(from, to);
     const isValid = validateMove?.(uciTry);
 
@@ -511,6 +517,8 @@ export default function ChessBoardWithLogic({
     boardOrientation: playerSide === 'b' ? 'black' : 'white',
     darkSquareStyle: { backgroundColor: '#4F4372' },
     lightSquareStyle: { backgroundColor: '#D9D9D9' },
+    darkSquareNotationStyle: { color: '#D9D9D9' },
+    lightSquareNotationStyle: { color: '#4F4372' },
     id: 'click-or-drag-to-move',
   } as const;
 

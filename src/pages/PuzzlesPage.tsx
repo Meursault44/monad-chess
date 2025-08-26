@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { getRandomPuzzle } from '@/api/puzzles';
 import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
-import { Button, Heading, Image, HStack, VStack, Progress } from '@chakra-ui/react';
+import { Button, Heading, Image, HStack, VStack, Progress, Text } from '@chakra-ui/react';
 import { usePuzzleEngine } from '@/hooks/usePuzzleEngine';
 import { useChessStore } from '@/store/chess.ts';
 import { useAuthStore } from '@/store/auth.ts';
 import PuzzleLogo from '/puzzle2.png';
+import { usePuzzlesStore } from '@/store/puzzles.ts';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -28,6 +29,8 @@ export const PuzzlesPage = () => {
   const startFromFen = useChessStore((s) => s.startFromFen);
   const phase = useChessStore((s) => s.phase);
   const user = useAuthStore((s) => s.user);
+  const ratingChange = usePuzzlesStore((s) => s.ratingChange);
+  const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
 
   return (
     <div className="flex gap-[3rem]">
@@ -55,11 +58,22 @@ export const PuzzlesPage = () => {
           <Heading color={'white'}>Puzzles</Heading>
         </HStack>
         <VStack alignItems={'flex-start'}>
-          <Heading color={'white'}>{user?.puzzle_rating || ''}</Heading>
-          <Progress.Root defaultValue={30} minW="240px">
-            <Progress.Track>
-              <Progress.Range bg={'#836EF9'} />
-            </Progress.Track>
+          <HStack>
+            <Heading color={'white'}>{user?.puzzle_rating || ''}</Heading>
+            {!!ratingChange && ratingChange > 0 && (
+              <Heading color={'green'}> +{ratingChange}</Heading>
+            )}
+            {!!ratingChange && ratingChange < 0 && <Heading color={'red'}> {ratingChange}</Heading>}
+          </HStack>
+          <Progress.Root value={Number(user?.puzzle_rating) % 100} minW="240px">
+            <HStack>
+              <Progress.Track flex={'1'}>
+                <Progress.Range bg={'#836EF9'} />
+              </Progress.Track>
+              <Progress.ValueText color={'white'}>
+                {!!user?.puzzle_rating && Math.trunc(user?.puzzle_rating / 100)}
+              </Progress.ValueText>
+            </HStack>
           </Progress.Root>
         </VStack>
         <div>
@@ -71,6 +85,7 @@ export const PuzzlesPage = () => {
                 clearState();
                 const sideNext = sideToMoveFromFen(next.fen);
                 startFromFen(next.fen, sideNext); // теперь стартуем именно НОВЫЙ пазл
+                setRatingChange(null);
               }
             }}
             bg={'#25232C'}

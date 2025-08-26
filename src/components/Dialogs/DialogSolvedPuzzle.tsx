@@ -19,7 +19,7 @@ export const DialogSolvedPuzzle = () => {
         <Portal>
           <Dialog.Backdrop />
           <Dialog.Positioner>
-            <Dialog.Content maxW="960px">
+            <Dialog.Content maxW="400px">
               <Dialog.Header>
                 <Dialog.Title>You have successfully solved the puzzle !!!</Dialog.Title>
               </Dialog.Header>

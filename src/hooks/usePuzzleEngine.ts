@@ -5,6 +5,7 @@ import { checkPuzzleMove } from '@/api/puzzles.ts';
 import { useChessStore } from '@/store/chess.ts';
 import { useDialogsStore } from '@/store/dialogs.ts';
 import { useAuthStore } from '@/store/auth.ts';
+import { usePuzzlesStore } from '@/store/puzzles.ts';
 
 export type LichessPuzzle = {
   id: string;
@@ -20,6 +21,7 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
   const setPhase = useChessStore((s) => s.setPhase);
   const undoHard = useChessStore((s) => s.undoHard);
   const setPuzzleRating = useAuthStore((s) => s.setPuzzleRating);
+  const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
 
   const { setDialogSolvedPuzzle } = useDialogsStore();
   const { mutate } = useMutation({
@@ -41,9 +43,12 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
               setIdxBack(0);
               setDialogSolvedPuzzle(true);
               setPuzzleRating(res.new_rating);
+              setRatingChange(res.rating_change);
             } else if (res?.correct) {
+              setRatingChange(null);
               setIdxBack((i) => i + 1);
             } else if (!res?.correct) {
+              setRatingChange(res.rating_change);
               setPuzzleRating(res.new_rating);
               if (idx > idxBack) {
                 setIdx(idxBack);
