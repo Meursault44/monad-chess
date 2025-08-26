@@ -30,7 +30,7 @@ function toUci(from: string, to: string, promo?: 'q' | 'r' | 'b' | 'n') {
 }
 
 // helper: SVG “крестик” в кружке как data URL
-const makeErrorBadgeDataUrl = (fill = '#ef4444') => {
+const makeErrorBadgeDataUrl = (fill = 'rgba(210, 56, 70, 1)') => {
   const svg = `
   <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
     <circle cx='12' cy='12' r='12' fill='${fill}'/>
@@ -39,7 +39,7 @@ const makeErrorBadgeDataUrl = (fill = '#ef4444') => {
   return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
 };
 
-const makeSuccessBadgeDataUrl = (fill = '#22c55e') => {
+const makeSuccessBadgeDataUrl = (fill = 'rgba(38, 181, 97, 1)') => {
   const svg = `
   <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
     <circle cx='12' cy='12' r='12' fill='${fill}'/>
@@ -141,8 +141,8 @@ export default function ChessBoardWithLogic({
   const lastMoveStyles = useMemo<SquaresStylesType>(() => {
     if (!lastMove) return {};
     return {
-      [lastMove.from]: { background: 'rgba(250, 231, 49, 0.8)' },
-      [lastMove.to]: { background: 'rgba(250, 231, 49, 0.8)' },
+      [lastMove.from]: { background: 'rgba(255, 206, 69, 0.8)' },
+      [lastMove.to]: { background: 'rgba(255, 206, 69, 0.8)' },
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastMove?.from, lastMove?.to]);
@@ -213,7 +213,7 @@ export default function ChessBoardWithLogic({
         backgroundSize: m.captured ? '100%' : '50%',
       };
     }
-    ns[square] = { background: 'rgba(220, 255, 163, 0.8)' };
+    ns[square] = { background: 'rgba(255, 206, 69, 0.8)' };
     setPossibleMovesSquares(ns);
     return true;
   }
@@ -275,6 +275,7 @@ export default function ChessBoardWithLogic({
         to: promotionMove.to,
         promotion: piece,
       });
+      onMyMove?.(promotionMove.from, promotionMove.to, piece);
       updateData();
 
       setPossibleMovesSquares({});
@@ -311,8 +312,8 @@ export default function ChessBoardWithLogic({
         playMoveSound({ moveInfo, isCheck });
         setBadgeCss(makeBadgeCss(to, 'success'));
         setPuzzleMovesSquares({
-          [from]: { backgroundColor: 'rgba(172, 206, 89, .85)' },
-          [to]: { backgroundColor: 'rgba(172, 206, 89, .85)' },
+          [from]: { backgroundColor: 'rgba(133, 201, 64, 0.8)' },
+          [to]: { backgroundColor: 'rgba(133, 201, 64, 0.8)' },
         });
         if (getGameStatus() === playerSide && showDialogWinGame) {
           setDialogWinGame(true);
@@ -338,8 +339,8 @@ export default function ChessBoardWithLogic({
         playMoveSound({ moveInfo, isCheck });
         setBadgeCss(makeBadgeCss(to, 'error'));
         setPuzzleMovesSquares({
-          [from]: { backgroundColor: 'rgba(255, 119, 105, .8)' },
-          [to]: { backgroundColor: 'rgba(255, 119, 105, .8)' },
+          [from]: { backgroundColor: 'rgba(245, 68, 68, 0.8)' },
+          [to]: { backgroundColor: 'rgba(245, 68, 68, 0.8)' },
         });
         setIsLock(true);
         return true;
@@ -381,6 +382,7 @@ export default function ChessBoardWithLogic({
 
     try {
       const moveInfo = applyMove({ from: moveFrom, to: square, promotion: 'q' });
+      onMyMove?.(moveFrom, square, 'q');
       updateData();
 
       playMoveSound({ moveInfo, isCheck });
@@ -438,8 +440,8 @@ export default function ChessBoardWithLogic({
       if (checkPremove({ from: sourceSquare, to: targetSquare })) {
         setPremove({ from: sourceSquare, to: targetSquare });
         setPremoveSquares({
-          [sourceSquare]: { background: 'rgba(57, 84, 151, 0.8)' },
-          [targetSquare]: { background: 'rgba(57, 84, 151, 0.8)' },
+          [sourceSquare]: { background: 'rgba(72, 160, 255, 0.5)' },
+          [targetSquare]: { background: 'rgba(72, 160, 255, 0.5)' },
         });
         return false;
       }

@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { getRandomPuzzle } from '@/api/puzzles';
 import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
-import { Button, Heading, Image, HStack, VStack, Progress, Text } from '@chakra-ui/react';
+import { Button, Heading, Image, HStack, VStack, Progress, Text, Box } from '@chakra-ui/react';
 import { usePuzzleEngine } from '@/hooks/usePuzzleEngine';
 import { useChessStore } from '@/store/chess.ts';
 import { useAuthStore } from '@/store/auth.ts';
 import PuzzleLogo from '/puzzle2.png';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
+import assistent from '@/assets/assistent.png';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -42,7 +43,7 @@ export const PuzzlesPage = () => {
       <VStack
         my={'auto'}
         h={'90vh'}
-        w={'300px'}
+        w={'320px'}
         border={'2px white solid'}
         borderRadius={'10px'}
         bg={'#17171A'}
@@ -57,6 +58,45 @@ export const PuzzlesPage = () => {
           <Image src={PuzzleLogo} alt="" width={'40px'} />
           <Heading color={'white'}>Puzzles</Heading>
         </HStack>
+        <HStack mx="10px" alignItems="flex-start" spacing="12px">
+          <Image src={assistent} alt="" width={'110px'} />
+
+          <Box
+            position="relative"
+            flex="1"
+            bg="white"
+            color="black"
+            px="10px"
+            py="8px"
+            borderRadius="10px"
+            boxShadow="md"
+          >
+            <Text lineHeight="1.2" fontSize="16px">
+              Doing Puzzles every day helps you choose safe moves in your own games.
+            </Text>
+
+            {/* хвостик слева — указывает на ассистента */}
+            <Box
+              as="svg"
+              viewBox="0 0 15 22"
+              w="15px"
+              h="22px"
+              position="absolute"
+              top="65%"
+              left="-15px"
+              transform="translateY(-50%)"
+              color="white" // цвет хвостика = фону пузыря
+              pointerEvents="none"
+              style={{ filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.06))' }}
+              aria-hidden
+            >
+              <path
+                d="M0 14C8.4 14 12.8333 4.66667 15 0V22C15 22 3.5 22 0 14Z"
+                fill="currentColor"
+              />
+            </Box>
+          </Box>
+        </HStack>
         <VStack alignItems={'flex-start'}>
           <HStack>
             <Heading color={'white'}>{user?.puzzle_rating || ''}</Heading>
@@ -65,7 +105,7 @@ export const PuzzlesPage = () => {
             )}
             {!!ratingChange && ratingChange < 0 && <Heading color={'red'}> {ratingChange}</Heading>}
           </HStack>
-          <Progress.Root value={Number(user?.puzzle_rating) % 100} minW="240px">
+          <Progress.Root value={Number(user?.puzzle_rating) % 100} minW="280px">
             <HStack>
               <Progress.Track flex={'1'}>
                 <Progress.Range bg={'#836EF9'} />
@@ -89,8 +129,11 @@ export const PuzzlesPage = () => {
               }
             }}
             bg={'#25232C'}
+            _hover={{
+              backgroundColor: '#4F4372',
+            }}
             h={'50px'}
-            w={'240px'}
+            w={'280px'}
             mx={'10px'}
             fontSize={'18px'}
           >
