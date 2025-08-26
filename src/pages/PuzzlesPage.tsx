@@ -24,8 +24,8 @@ export const PuzzlesPage = () => {
     gcTime: Infinity,
   });
 
-  const side = sideToMoveFromFen(puzzle?.fen);
-  const { validateMove, opponentLogic, clearState } = usePuzzleEngine(puzzle, side);
+  const side = sideToMoveFromFen(puzzle?.puzzle?.fen);
+  const { validateMove, opponentLogic, clearState } = usePuzzleEngine(puzzle?.puzzle, side);
 
   const startFromFen = useChessStore((s) => s.startFromFen);
   const phase = useChessStore((s) => s.phase);
@@ -72,7 +72,8 @@ export const PuzzlesPage = () => {
             boxShadow="md"
           >
             <Text lineHeight="1.2" fontSize="16px">
-              Doing Puzzles every day helps you choose safe moves in your own games.
+              {puzzle?.greeting?.text ||
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}
             </Text>
 
             {/* хвостик слева — указывает на ассистента */}
@@ -121,10 +122,11 @@ export const PuzzlesPage = () => {
             onClick={async () => {
               const res = await refetch(); // дождались новые данные
               const next = res.data;
-              if (next?.fen) {
+              console.log(next);
+              if (next?.puzzle?.fen) {
                 clearState();
-                const sideNext = sideToMoveFromFen(next.fen);
-                startFromFen(next.fen, sideNext); // теперь стартуем именно НОВЫЙ пазл
+                const sideNext = sideToMoveFromFen(next.puzzle.fen);
+                startFromFen(next.puzzle.fen, sideNext); // теперь стартуем именно НОВЫЙ пазл
                 setRatingChange(null);
               }
             }}

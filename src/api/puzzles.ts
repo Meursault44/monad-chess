@@ -1,11 +1,17 @@
 import { apiFetch } from '@/api/client';
 
 export type Puzzle = {
-  id: string;
-  fen: string;
-  moves: string[];
-  rating: number;
-  themes: string[];
+  greeting: {
+    text: string;
+    ton: string;
+  };
+  puzzle: {
+    id: string;
+    fen: string;
+    moves: string[];
+    rating: number;
+    themes: string[];
+  };
 };
 
 export async function getRandomPuzzle(): Promise<Puzzle> {
