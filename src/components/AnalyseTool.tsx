@@ -8,7 +8,11 @@ const sideItems = [
   { label: 'Random', value: 'random' as const },
 ];
 
-export const AnalyseTool: FC = () => {
+type AnalyseToolType = {
+  startGame: () => void;
+};
+
+export const AnalyseTool: FC<AnalyseToolType> = ({ startGame }) => {
   const timeline = useChessStore((s) => s.timelineSan);
   const currentPly = useChessStore((s) => s.currentPly);
   const turn = useChessStore((s) => s.turn);
@@ -17,17 +21,11 @@ export const AnalyseTool: FC = () => {
   const phase = useChessStore((s) => s.phase); // 'idle' | 'playing' | 'finished'
   const playerSide = useChessStore((s) => s.playerSide); // 'w' | 'b' | null
   const setPlayer = useChessStore((s) => s.setPlayerSide);
-  const startGame = useChessStore((s) => s.startGame);
   const resetGame = useChessStore((s) => s.resetGame);
 
   const undo = useChessStore((s) => s.undo);
   const redo = useChessStore((s) => s.redo);
   const goToPly = useChessStore((s) => s.goToPly);
-
-  const [choice, setChoice] = useState<'w' | 'b' | 'random'>('random');
-  useEffect(() => {
-    if (phase !== 'playing') setChoice('random');
-  }, [phase]);
 
   const data = useMemo(() => {
     const rows: Array<{
@@ -62,12 +60,10 @@ export const AnalyseTool: FC = () => {
 
         {/* ✅ Новый Radio API из Chakra v3 */}
         <RadioGroup.Root
-          value={choice}
+          disabled={phase === 'playing'}
           onValueChange={(e) => {
             const v = e.value as 'w' | 'b' | 'random';
-            setChoice(v);
-            // чтобы доска переворачивалась ещё до старта партии
-            if (phase !== 'playing') setPlayer(v);
+            setPlayer(v);
           }}
         >
           <HStack gap="3">
@@ -86,7 +82,6 @@ export const AnalyseTool: FC = () => {
             size="sm"
             colorScheme="purple"
             onClick={() => {
-              setPlayer(choice);
               startGame();
             }}
             disabled={phase === 'playing'}

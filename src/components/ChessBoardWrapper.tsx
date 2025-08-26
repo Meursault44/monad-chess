@@ -91,9 +91,11 @@ export default function ChessBoardWithLogic({
   onOpponentTurn,
   validateMove,
   showDialogWinGame,
+  onMyMove,
   mode,
 }: {
   onOpponentTurn?: OpponentLogic;
+  onMyMove?: (from: Square, to: Square, promotion: string) => void;
   validateMove?: (uci: string) => boolean;
   showDialogWinGame?: boolean;
   mode?: 'puzzle' | 'game';
@@ -441,6 +443,7 @@ export default function ChessBoardWithLogic({
       const moveInfo = applyMove({ from: sourceSquare, to: targetSquare, promotion: 'q' });
       if (!moveInfo) throw new Error('Invalid move');
 
+      onMyMove?.(sourceSquare, targetSquare, 'q');
       updateData();
 
       setMoveFrom(null);
