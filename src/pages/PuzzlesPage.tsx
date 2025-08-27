@@ -57,9 +57,10 @@ export const PuzzlesPage = () => {
       <VStack
         my={'auto'}
         h={'90vh'}
-        w={'320px'}
+        w={'360px'}
         border={'2px white solid'}
         borderRadius={'10px'}
+        gap={'30px'}
         bg={'#17171A'}
       >
         <HStack
@@ -70,9 +71,11 @@ export const PuzzlesPage = () => {
           padding={'10px 40px'}
         >
           <Image src={PuzzleLogo} alt="" width={'40px'} />
-          <Heading color={'white'}>Puzzles</Heading>
+          <Heading color={'white'} fontSize={'24px'}>
+            Puzzles
+          </Heading>
         </HStack>
-        <HStack mx="10px" alignItems="flex-end" spacing="12px">
+        <HStack mx="10px" alignItems="flex-end">
           <Image src={assistent} alt="" width={'110px'} />
 
           <Box
@@ -96,7 +99,7 @@ export const PuzzlesPage = () => {
               w="15px"
               h="22px"
               position="absolute"
-              top="65%"
+              bottom="20px"
               left="-15px"
               transform="translateY(-50%)"
               color="white" // цвет хвостика = фону пузыря
@@ -119,18 +122,18 @@ export const PuzzlesPage = () => {
             )}
             {!!ratingChange && ratingChange < 0 && <Heading color={'red'}> {ratingChange}</Heading>}
           </HStack>
-          <Progress.Root value={Number(rating) % 100} minW="280px">
+          <Progress.Root value={Number(rating) % 100} minW="320px">
             <HStack>
-              <Progress.Track flex={'1'}>
+              <Progress.Track h={'20px'} borderRadius={'10px'} flex={'1'}>
                 <Progress.Range bg={'#836EF9'} />
               </Progress.Track>
-              <Progress.ValueText color={'white'}>
-                {!!rating && Math.trunc(rating / 100)}
-              </Progress.ValueText>
+              <Text fontSize={'20px'} color={'white'}>
+                {!!rating && Math.trunc(rating / 100) - 5} lvl
+              </Text>
             </HStack>
           </Progress.Root>
         </VStack>
-        <div>
+        <Box>
           <Button
             onClick={async () => {
               const res = await refetch(); // дождались новые данные
@@ -148,7 +151,7 @@ export const PuzzlesPage = () => {
               backgroundColor: '#4F4372',
             }}
             h={'50px'}
-            w={'280px'}
+            w={'320px'}
             mx={'10px'}
             fontSize={'18px'}
           >
@@ -157,7 +160,7 @@ export const PuzzlesPage = () => {
           {phase === 'playing' && (
             <div className={'text-white'}>{side === 'w' ? 'White move' : 'Black move'}</div>
           )}
-        </div>
+        </Box>
       </VStack>
     </div>
   );

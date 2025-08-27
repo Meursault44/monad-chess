@@ -19,6 +19,7 @@ export const Sidebar = () => {
       color={'white'}
       borderRadius={'0 15px 15px 0'}
       align="stretch"
+      flexShrink={0}
     >
       <VStack align="stretch" justify={'center'}>
         <ChakraLink
@@ -37,6 +38,7 @@ export const Sidebar = () => {
           color={'white'}
           p={'10px'}
           gap={'0.5rem'}
+          fontSize={'18px'}
           height={'50px'}
           _hover={{
             backgroundColor: '#1E1C24',
@@ -55,6 +57,7 @@ export const Sidebar = () => {
           height={'50px'}
           p={'10px'}
           gap={'0.5rem'}
+          fontSize={'18px'}
           _hover={{
             backgroundColor: '#1E1C24',
             textDecoration: 'none',
@@ -63,7 +66,8 @@ export const Sidebar = () => {
             outline: 'none',
           }}
         >
-          <Image src={bots} alt="" width="39px" ml={'2px'} /> Play bots
+          <Image src={bots} alt="" width="37px" ml={'2px'} />
+          Play bots
         </ChakraLink>
         <ChakraLink
           as={RouterLink}
@@ -72,6 +76,7 @@ export const Sidebar = () => {
           height={'50px'}
           p={'10px'}
           gap={'0.5rem'}
+          fontSize={'18px'}
           _hover={{
             backgroundColor: '#1E1C24',
             textDecoration: 'none',
@@ -90,6 +95,7 @@ export const Sidebar = () => {
           color={'white'}
           p={'10px'}
           gap={'0.5rem'}
+          fontSize={'18px'}
           _hover={{
             backgroundColor: '#1E1C24',
             textDecoration: 'none',

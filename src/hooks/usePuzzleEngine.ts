@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { OpponentLogic } from '@/hooks/useRandomOpponent';
 import { useMutation } from '@tanstack/react-query';
 import { checkPuzzleMove } from '@/api/puzzles.ts';
 import { useChessStore } from '@/store/chess.ts';
-import { useDialogsStore } from '@/store/dialogs.ts';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
 
 export type LichessPuzzle = {
@@ -23,7 +22,6 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
   const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
   const setAssistantMessage = usePuzzlesStore((s) => s.setAssistantMessage);
 
-  const { setDialogSolvedPuzzle } = useDialogsStore();
   const { mutate } = useMutation({
     mutationFn: checkPuzzleMove,
   });
@@ -41,7 +39,6 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
               setPhase('idle');
               setIdx(0);
               setIdxBack(0);
-              setDialogSolvedPuzzle(true);
               setPuzzleRating(res.new_rating);
               setRatingChange(res.rating_change);
             } else if (res?.correct) {
