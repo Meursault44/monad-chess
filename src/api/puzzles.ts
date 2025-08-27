@@ -1,7 +1,7 @@
 import { apiFetch } from '@/api/client';
 
 export type Puzzle = {
-  greeting: {
+  instruction: {
     text: string;
     ton: string;
   };
@@ -14,8 +14,21 @@ export type Puzzle = {
   };
 };
 
+type PuzzleGreeting = {
+  greeting: {
+    text: string;
+    ton: string;
+  };
+};
+
 export async function getRandomPuzzle(): Promise<Puzzle> {
   const res = await apiFetch(`/puzzles/random`);
+  if (!res.ok) throw new Error('Failed to fetch puzzle');
+  return res.json();
+}
+
+export async function getPuzzleGreetings(): Promise<PuzzleGreeting> {
+  const res = await apiFetch(`/puzzles/greetings`);
   if (!res.ok) throw new Error('Failed to fetch puzzle');
   return res.json();
 }

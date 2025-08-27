@@ -1,6 +1,7 @@
 import { apiFetch } from './client';
 import { type User } from '@/store/auth.ts';
 import { useAuthStore } from '@/store/auth';
+import { usePuzzlesStore } from '@/store/puzzles.ts';
 import { useMutation } from '@tanstack/react-query';
 
 export type LoginResponse = {
@@ -20,6 +21,7 @@ export async function loginRequest(address: string): Promise<LoginResponse> {
 
 export function finishAuth({ token, user }: LoginResponse) {
   useAuthStore.getState().setAuth({ user, accessToken: token });
+  usePuzzlesStore.getState().setRating(user.puzzle_rating);
 }
 
 export function useLoginMutation() {

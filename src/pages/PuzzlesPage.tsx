@@ -1,10 +1,10 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getRandomPuzzle } from '@/api/puzzles';
+import { getRandomPuzzle, getPuzzleGreetings } from '@/api/puzzles';
 import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
 import { Button, Heading, Image, HStack, VStack, Progress, Text, Box } from '@chakra-ui/react';
 import { usePuzzleEngine } from '@/hooks/usePuzzleEngine';
 import { useChessStore } from '@/store/chess.ts';
-import { useAuthStore } from '@/store/auth.ts';
 import PuzzleLogo from '/puzzle2.png';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
 import assistent from '@/assets/assistent.png';
@@ -24,14 +24,28 @@ export const PuzzlesPage = () => {
     gcTime: Infinity,
   });
 
+  const { data: greetings, refetch: refetchGreetings } = useQuery({
+    queryKey: ['puzzles/greetings'],
+    queryFn: getPuzzleGreetings,
+  });
+  console.log(greetings);
+
   const side = sideToMoveFromFen(puzzle?.puzzle?.fen);
   const { validateMove, opponentLogic, clearState } = usePuzzleEngine(puzzle?.puzzle, side);
 
   const startFromFen = useChessStore((s) => s.startFromFen);
   const phase = useChessStore((s) => s.phase);
-  const user = useAuthStore((s) => s.user);
+  const setAssistantMessage = usePuzzlesStore((s) => s.setAssistantMessage);
+  const assistantMessage = usePuzzlesStore((s) => s.assistantMessage);
+  const rating = usePuzzlesStore((s) => s.rating);
   const ratingChange = usePuzzlesStore((s) => s.ratingChange);
   const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
+
+  useEffect(() => {
+    if (greetings) {
+      setAssistantMessage(greetings?.greeting?.text);
+    }
+  }, [greetings, setAssistantMessage]);
 
   return (
     <div className="flex gap-[3rem]">
@@ -58,7 +72,7 @@ export const PuzzlesPage = () => {
           <Image src={PuzzleLogo} alt="" width={'40px'} />
           <Heading color={'white'}>Puzzles</Heading>
         </HStack>
-        <HStack mx="10px" alignItems="flex-start" spacing="12px">
+        <HStack mx="10px" alignItems="flex-end" spacing="12px">
           <Image src={assistent} alt="" width={'110px'} />
 
           <Box
@@ -72,8 +86,7 @@ export const PuzzlesPage = () => {
             boxShadow="md"
           >
             <Text lineHeight="1.2" fontSize="16px">
-              {puzzle?.greeting?.text ||
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'}
+              {assistantMessage}
             </Text>
 
             {/* хвостик слева — указывает на ассистента */}
@@ -100,19 +113,19 @@ export const PuzzlesPage = () => {
         </HStack>
         <VStack alignItems={'flex-start'}>
           <HStack>
-            <Heading color={'white'}>{user?.puzzle_rating || ''}</Heading>
+            <Heading color={'white'}>{rating || ''}</Heading>
             {!!ratingChange && ratingChange > 0 && (
               <Heading color={'green'}> +{ratingChange}</Heading>
             )}
             {!!ratingChange && ratingChange < 0 && <Heading color={'red'}> {ratingChange}</Heading>}
           </HStack>
-          <Progress.Root value={Number(user?.puzzle_rating) % 100} minW="280px">
+          <Progress.Root value={Number(rating) % 100} minW="280px">
             <HStack>
               <Progress.Track flex={'1'}>
                 <Progress.Range bg={'#836EF9'} />
               </Progress.Track>
               <Progress.ValueText color={'white'}>
-                {!!user?.puzzle_rating && Math.trunc(user?.puzzle_rating / 100)}
+                {!!rating && Math.trunc(rating / 100)}
               </Progress.ValueText>
             </HStack>
           </Progress.Root>
@@ -122,8 +135,8 @@ export const PuzzlesPage = () => {
             onClick={async () => {
               const res = await refetch(); // дождались новые данные
               const next = res.data;
-              console.log(next);
               if (next?.puzzle?.fen) {
+                setAssistantMessage(next?.instruction?.text);
                 clearState();
                 const sideNext = sideToMoveFromFen(next.puzzle.fen);
                 startFromFen(next.puzzle.fen, sideNext); // теперь стартуем именно НОВЫЙ пазл

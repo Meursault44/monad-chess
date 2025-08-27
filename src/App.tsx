@@ -14,7 +14,7 @@ function App() {
   useEffect(() => {
     if (didLoginRef.current) return;
     if (authenticated && ready && user?.wallet?.address) {
-      // && !getAccessToken() - add this in check later
+      //  && !getAccessToken() - add
       didLoginRef.current = true;
       mutateAsync({ address: user.wallet.address }).catch((e) => {
         console.error('Login mutation error', e);

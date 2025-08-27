@@ -4,7 +4,6 @@ import { useMutation } from '@tanstack/react-query';
 import { checkPuzzleMove } from '@/api/puzzles.ts';
 import { useChessStore } from '@/store/chess.ts';
 import { useDialogsStore } from '@/store/dialogs.ts';
-import { useAuthStore } from '@/store/auth.ts';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
 
 export type LichessPuzzle = {
@@ -20,8 +19,9 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
 
   const setPhase = useChessStore((s) => s.setPhase);
   const undoHard = useChessStore((s) => s.undoHard);
-  const setPuzzleRating = useAuthStore((s) => s.setPuzzleRating);
+  const setPuzzleRating = usePuzzlesStore((s) => s.setRating);
   const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
+  const setAssistantMessage = usePuzzlesStore((s) => s.setAssistantMessage);
 
   const { setDialogSolvedPuzzle } = useDialogsStore();
   const { mutate } = useMutation({
@@ -55,6 +55,7 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
                 undoHard();
               }
             }
+            setAssistantMessage(res?.finalMsg?.text || res?.commentary?.text);
           },
         },
       );
