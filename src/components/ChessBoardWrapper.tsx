@@ -87,7 +87,7 @@ const makeBadgeCss = (
 
 type CustomCss = string | string[];
 
-export default function ChessBoardWithLogic({
+export default function ChessBoardWrapper({
   onOpponentTurn,
   validateMove,
   showDialogWinGame,

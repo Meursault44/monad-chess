@@ -8,6 +8,7 @@ import { useChessStore } from '@/store/chess.ts';
 import PuzzleLogo from '/puzzle2.png';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
 import assistent from '@/assets/assistent.png';
+import { AnalyseToolWrapper } from '@/components/AnalyseToolWrapper.tsx';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -54,27 +55,7 @@ export const PuzzlesPage = () => {
         validateMove={validateMove}
         mode={'puzzle'}
       />
-      <VStack
-        my={'auto'}
-        h={'90vh'}
-        w={'360px'}
-        border={'2px white solid'}
-        borderRadius={'10px'}
-        gap={'30px'}
-        bg={'#17171A'}
-      >
-        <HStack
-          background={'rgba(0,0,0,0.3)'}
-          w={'100%'}
-          height={'80px'}
-          justify={'center'}
-          padding={'10px 40px'}
-        >
-          <Image src={PuzzleLogo} alt="" width={'40px'} />
-          <Heading color={'white'} fontSize={'24px'}>
-            Puzzles
-          </Heading>
-        </HStack>
+      <AnalyseToolWrapper title={'Puzzles'} logoSrc={PuzzleLogo}>
         <HStack mx="10px" alignItems="flex-end">
           <Image src={assistent} alt="" width={'110px'} />
 
@@ -161,7 +142,7 @@ export const PuzzlesPage = () => {
             <div className={'text-white'}>{side === 'w' ? 'White move' : 'Black move'}</div>
           )}
         </Box>
-      </VStack>
+      </AnalyseToolWrapper>
     </div>
   );
 };

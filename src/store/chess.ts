@@ -6,7 +6,7 @@ import type { Color, Square } from 'chess.js';
 type MovesFn = Chess['moves'];
 type FindPieceFn = Chess['findPiece'];
 
-type GamePhase = 'idle' | 'playing' | 'finished';
+type GamePhase = 'idle' | 'playing' | 'finished' | 'loading';
 
 type ChessStoreState = {
   history: string[];

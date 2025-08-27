@@ -1,6 +1,10 @@
-import { type FC, useMemo, useState, useEffect } from 'react';
+import { type FC, useMemo, useState } from 'react';
 import { useChessStore } from '../store/chess.ts';
-import { Button, VStack, Text, HStack, RadioGroup, Separator } from '@chakra-ui/react';
+import { Button, VStack, Text, HStack, RadioGroup, Separator, Image } from '@chakra-ui/react';
+import { AnalyseToolWrapper } from '@/components/AnalyseToolWrapper.tsx';
+import playBotsLogo from '/bots.png';
+import John from '@/assets/John.jpg';
+import Benja from '@/assets/Benja.jpg';
 
 const sideItems = [
   { label: 'White', value: 'w' as const },
@@ -16,12 +20,12 @@ export const AnalyseTool: FC<AnalyseToolType> = ({ startGame }) => {
   const timeline = useChessStore((s) => s.timelineSan);
   const currentPly = useChessStore((s) => s.currentPly);
   const turn = useChessStore((s) => s.turn);
+  const [isSelectedBot, setIsSelectedBot] = useState(false);
 
   // управление партией (из стора)
   const phase = useChessStore((s) => s.phase); // 'idle' | 'playing' | 'finished'
   const playerSide = useChessStore((s) => s.playerSide); // 'w' | 'b' | null
   const setPlayer = useChessStore((s) => s.setPlayerSide);
-  const resetGame = useChessStore((s) => s.resetGame);
 
   const undo = useChessStore((s) => s.undo);
   const redo = useChessStore((s) => s.redo);
@@ -51,8 +55,37 @@ export const AnalyseTool: FC<AnalyseToolType> = ({ startGame }) => {
   }, [timeline]);
 
   return (
-    <div className="my-auto flex h-[860px] w-[300px] shrink-0 flex-col bg-[#4E3371]">
+    <AnalyseToolWrapper title={'Play Bots'} logoSrc={playBotsLogo}>
       {/* Панель управления */}
+      <VStack w={'100%'} p={'10px'}>
+        <HStack
+          cursor={'pointer'}
+          onClick={() => setIsSelectedBot(true)}
+          bg={'rgba(255, 255, 255, .3)'}
+          p={'6px'}
+          borderRadius={'10px'}
+          boxSizing={'border-box'}
+          w={'100%'}
+          color={'white'}
+          boxShadow={'4 6 10 rgba(0,0,0, 1)'}
+        >
+          <Image src={John} width={'50px'}></Image>
+          John W. Rich Kid (0 Elo)
+        </HStack>
+        <HStack
+          cursor={'pointer'}
+          onClick={() => setIsSelectedBot(true)}
+          bg={'rgba(255, 255, 255, .3)'}
+          p={'6px'}
+          borderRadius={'10px'}
+          boxSizing={'border-box'}
+          w={'100%'}
+          color={'white'}
+        >
+          <Image src={Benja} width={'50px'}></Image>
+          Benja (700 Elo)
+        </HStack>
+      </VStack>
       <VStack align="stretch" p="10px" spacing="8px">
         <Text color="white" fontWeight="bold">
           Game control
@@ -71,7 +104,7 @@ export const AnalyseTool: FC<AnalyseToolType> = ({ startGame }) => {
               <RadioGroup.Item key={item.value} value={item.value}>
                 <RadioGroup.ItemHiddenInput />
                 <RadioGroup.ItemIndicator />
-                <RadioGroup.ItemText>{item.label}</RadioGroup.ItemText>
+                <RadioGroup.ItemText color={'white'}>{item.label}</RadioGroup.ItemText>
               </RadioGroup.Item>
             ))}
           </HStack>
@@ -84,12 +117,10 @@ export const AnalyseTool: FC<AnalyseToolType> = ({ startGame }) => {
             onClick={() => {
               startGame();
             }}
+            bg={'gray'}
             disabled={phase === 'playing'}
           >
             Start game
-          </Button>
-          <Button size="sm" variant="outline" colorScheme="red" onClick={resetGame}>
-            Reset
           </Button>
         </div>
 
@@ -130,14 +161,14 @@ export const AnalyseTool: FC<AnalyseToolType> = ({ startGame }) => {
 
       {/* Навигация */}
       <VStack align="stretch" p="10px" spacing="8px">
-        <Button size="sm" onClick={() => undo()}>
+        <Button size="sm" bg={'gray'} onClick={() => undo()}>
           &larr; Назад
         </Button>
-        <Button size="sm" onClick={() => redo()}>
+        <Button size="sm" bg={'gray'} onClick={() => redo()}>
           &rarr; Вперёд
         </Button>
         <Text color="white">{turn === 'w' ? 'Your move' : "Opponent's move"}</Text>
       </VStack>
-    </div>
+    </AnalyseToolWrapper>
   );
 };

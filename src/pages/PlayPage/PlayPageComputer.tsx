@@ -1,8 +1,7 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { HStack } from '@chakra-ui/react';
 import { AnalyseTool, PlayerRow } from '@/components';
 import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
-import { useRandomOpponent } from '@/hooks/useRandomOpponent';
 import { useChessStore } from '@/store/chess.ts';
 import { useAuthStore } from '@/store/auth.ts';
 import { createRoom } from '@/api/rooms.ts';
