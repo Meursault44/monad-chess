@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getRandomPuzzle, getPuzzleGreetings } from '@/api/puzzles';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { getRandomPuzzle, getPuzzleGreetings, analyzePuzzle } from '@/api/puzzles';
 import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
 import { Button, Heading, Image, HStack, VStack, Progress, Text, Box } from '@chakra-ui/react';
 import { usePuzzleEngine } from '@/hooks/usePuzzleEngine';
@@ -9,6 +9,7 @@ import PuzzleLogo from '/puzzle2.png';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
 import assistent from '@/assets/assistent.png';
 import { AnalyseToolWrapper } from '@/components/AnalyseToolWrapper.tsx';
+import { ThreeDotsWave } from '@/components/ThreeDotsWave.tsx';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -25,11 +26,22 @@ export const PuzzlesPage = () => {
     gcTime: Infinity,
   });
 
-  const { data: greetings, refetch: refetchGreetings } = useQuery({
+  const {
+    data: greetings,
+    isPending: isPendingGreetings,
+    refetch: refetchGreetings,
+  } = useQuery({
     queryKey: ['puzzles/greetings'],
     queryFn: getPuzzleGreetings,
   });
-  console.log(greetings);
+
+  const {
+    mutate,
+    isPending: isPendingAnalyze,
+    data: dataAnalyze,
+  } = useMutation({
+    mutationFn: analyzePuzzle,
+  });
 
   const side = sideToMoveFromFen(puzzle?.puzzle?.fen);
   const { validateMove, opponentLogic, clearState } = usePuzzleEngine(puzzle?.puzzle, side);
@@ -40,13 +52,29 @@ export const PuzzlesPage = () => {
   const assistantMessage = usePuzzlesStore((s) => s.assistantMessage);
   const rating = usePuzzlesStore((s) => s.rating);
   const ratingChange = usePuzzlesStore((s) => s.ratingChange);
+  const isPendingAssistantMessage = usePuzzlesStore((s) => s.isPendingAssistantMessage);
+  const setIsPendingAssistantMessage = usePuzzlesStore((s) => s.setIsPendingAssistantMessage);
   const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
 
   useEffect(() => {
     if (greetings) {
       setAssistantMessage(greetings?.greeting?.text);
     }
-  }, [greetings, setAssistantMessage]);
+  }, [greetings, setAssistantMessage, isPendingGreetings, setIsPendingAssistantMessage]);
+
+  useEffect(() => {
+    if (isPendingAnalyze || isPendingGreetings) {
+      setIsPendingAssistantMessage(true);
+    } else {
+      setIsPendingAssistantMessage(false);
+    }
+  }, [isPendingAnalyze, isPendingGreetings, setIsPendingAssistantMessage]);
+
+  useEffect(() => {
+    if (dataAnalyze?.text) {
+      setAssistantMessage(dataAnalyze?.text);
+    }
+  }, [dataAnalyze?.text, setAssistantMessage]);
 
   return (
     <div className="flex gap-[3rem]">
@@ -56,7 +84,7 @@ export const PuzzlesPage = () => {
         mode={'puzzle'}
       />
       <AnalyseToolWrapper title={'Puzzles'} logoSrc={PuzzleLogo}>
-        <HStack mx="10px" alignItems="flex-end">
+        <HStack mx="10px" alignItems="flex-end" w={'calc(100% - 20px)'} minHeight={'105px'}>
           <Image src={assistent} alt="" width={'110px'} />
 
           <Box
@@ -68,10 +96,19 @@ export const PuzzlesPage = () => {
             py="8px"
             borderRadius="10px"
             boxShadow="md"
+            h={'100%'}
+            display={'flex'}
+            alignItems={'center'}
           >
-            <Text lineHeight="1.2" fontSize="16px">
-              {assistantMessage}
-            </Text>
+            <Box w={'100%'} display={'flex'} justifyContent={'center'}>
+              {isPendingAssistantMessage ? (
+                <ThreeDotsWave />
+              ) : (
+                <Text lineHeight="1.2" fontSize="16px">
+                  {assistantMessage}
+                </Text>
+              )}
+            </Box>
 
             {/* хвостик слева — указывает на ассистента */}
             <Box
@@ -119,8 +156,8 @@ export const PuzzlesPage = () => {
             onClick={async () => {
               const res = await refetch(); // дождались новые данные
               const next = res.data;
+              mutate({ id: next?.puzzle?.id, isGreeting: true });
               if (next?.puzzle?.fen) {
-                setAssistantMessage(next?.instruction?.text);
                 clearState();
                 const sideNext = sideToMoveFromFen(next.puzzle.fen);
                 startFromFen(next.puzzle.fen, sideNext); // теперь стартуем именно НОВЫЙ пазл

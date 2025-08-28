@@ -50,3 +50,23 @@ export async function checkPuzzleMove({
   if (!res.ok) throw new Error('Move check failed');
   return res.json();
 }
+
+export async function analyzePuzzle({
+  id,
+  move,
+  step,
+  isGreeting,
+}: {
+  id: string;
+  move?: string;
+  step?: number;
+  isGreeting: boolean;
+}) {
+  const res = await apiFetch(`/puzzles/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ move, step, id, isGreeting }),
+  });
+  if (!res.ok) throw new Error('Move check failed');
+  return res.json();
+}

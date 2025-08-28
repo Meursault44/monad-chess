@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react';
-import type { OpponentLogic } from '@/hooks/useRandomOpponent';
+import confetti from 'canvas-confetti';
+import { useCallback, useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { checkPuzzleMove } from '@/api/puzzles.ts';
+import { checkPuzzleMove, analyzePuzzle } from '@/api/puzzles.ts';
 import { useChessStore } from '@/store/chess.ts';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
+import { useSoundEffects } from '@/hooks';
 
 export type LichessPuzzle = {
   id: string;
@@ -21,9 +22,15 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
   const setPuzzleRating = usePuzzlesStore((s) => s.setRating);
   const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
   const setAssistantMessage = usePuzzlesStore((s) => s.setAssistantMessage);
+  const setIsPendingAssistantMessage = usePuzzlesStore((s) => s.setIsPendingAssistantMessage);
+  const { playPuzzleCorrectSfx } = useSoundEffects();
 
   const { mutate } = useMutation({
     mutationFn: checkPuzzleMove,
+  });
+
+  const { mutate: mutateAnalyze, isPending: isLoadingAnalyze } = useMutation({
+    mutationFn: analyzePuzzle,
   });
 
   // guard для доски
@@ -37,6 +44,13 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
           onSuccess: (res) => {
             if (res?.finished) {
               setPhase('idle');
+              playPuzzleCorrectSfx();
+              confetti({ particleCount: 80, spread: 70, origin: { x: 0.15, y: 0.85 } });
+              confetti({ particleCount: 80, spread: 70, origin: { x: 0.15, y: 0.45 } });
+              confetti({ particleCount: 80, spread: 70, origin: { x: 0.8, y: 0.4 } });
+              confetti({ particleCount: 80, spread: 70, origin: { x: 0.8, y: 0.8 } });
+              confetti({ particleCount: 80, spread: 70, origin: { x: 0.53, y: 0.6 } });
+
               setIdx(0);
               setIdxBack(0);
               setPuzzleRating(res.new_rating);
@@ -52,7 +66,15 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
                 undoHard();
               }
             }
-            setAssistantMessage(res?.finalMsg?.text || res?.commentary?.text);
+          },
+        },
+      );
+
+      mutateAnalyze(
+        { id: puzzle?.id, move: uci, step: idxBack, isGreeting: false },
+        {
+          onSuccess: (res) => {
+            setAssistantMessage(res?.text || res?.text);
           },
         },
       );
@@ -68,7 +90,7 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
   );
 
   // логика «оппонента»: если следующий ход по скрипту принадлежит текущему turn и он не игрок, делаем его
-  const opponentLogic: OpponentLogic = useCallback(
+  const opponentLogic = useCallback(
     (ctx) => {
       if (!puzzle) return;
       if (ctx.phase !== 'playing' || !ctx.atTip) return;
@@ -97,6 +119,10 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
     },
     [puzzle, idx],
   );
+
+  useEffect(() => {
+    setIsPendingAssistantMessage(isLoadingAnalyze);
+  }, [isLoadingAnalyze, setIsPendingAssistantMessage]);
 
   const clearState = useCallback(() => {
     setIdx(0);
