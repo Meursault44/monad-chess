@@ -1,7 +1,7 @@
 import { VStack } from '@chakra-ui/react';
 import { Link as ChakraLink, Image } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router';
-import HorizontalLogo from '/HorizontalLogo.svg';
+import Logo from '/Logo.png';
 import PuzzleLogo from '/puzzle2.png';
 import play from '/play.png';
 import bots from '/bots.png';
@@ -27,10 +27,16 @@ export const Sidebar = () => {
           to="/"
           color={'white'}
           display={'flex'}
-          justifyContent={'center'}
-          padding={'30px 0 20px 0'}
+          padding={'30px 10px 20px 10px'}
+          _hover={{
+            textDecoration: 'none',
+          }}
+          _focus={{
+            outline: 'none',
+          }}
         >
-          <Image src={HorizontalLogo} alt="icon" width={'140px'} />
+          <Image src={Logo} alt="icon" width={'50px'} />
+          Monad-Chess
         </ChakraLink>
         <ChakraLink
           as={RouterLink}
