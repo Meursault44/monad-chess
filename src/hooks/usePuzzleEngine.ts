@@ -5,6 +5,7 @@ import { checkPuzzleMove, analyzePuzzle } from '@/api/puzzles.ts';
 import { useChessStore } from '@/store/chess.ts';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
 import { useSoundEffects } from '@/hooks';
+import { usePuzzleEffects } from '@/store/puzzleEffects.ts';
 
 export type LichessPuzzle = {
   id: string;
@@ -24,6 +25,8 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
   const setAssistantMessage = usePuzzlesStore((s) => s.setAssistantMessage);
   const setIsPendingAssistantMessage = usePuzzlesStore((s) => s.setIsPendingAssistantMessage);
   const { playPuzzleCorrectSfx } = useSoundEffects();
+
+  const triggerWinAnimation = usePuzzleEffects((s) => s.triggerWinAnimation);
 
   const { mutate } = useMutation({
     mutationFn: checkPuzzleMove,
@@ -45,6 +48,7 @@ export function usePuzzleEngine(puzzle: LichessPuzzle | null) {
             if (res?.finished) {
               setPhase('idle');
               playPuzzleCorrectSfx();
+              triggerWinAnimation(!!Number(uci.slice(-1)) ? uci.slice(-2) : uci.slice(-3, -1));
               confetti({ particleCount: 80, spread: 70, origin: { x: 0.15, y: 0.85 } });
               confetti({ particleCount: 80, spread: 70, origin: { x: 0.15, y: 0.45 } });
               confetti({ particleCount: 80, spread: 70, origin: { x: 0.8, y: 0.4 } });

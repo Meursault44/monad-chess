@@ -31,7 +31,6 @@ export const PlayPageComputer = () => {
       }
     })();
   }, [token, playerSide]);
-  console.log(roomId);
 
   // 2) когда придёт ход по WebSocket — передаём его в applyMove из доски
   const onOpponentMove = useCallback(
@@ -51,7 +50,6 @@ export const PlayPageComputer = () => {
   // 5) коллбек твоего хода (пользовательского)
   const onMyMove = useCallback(
     (from: Square, to: Square, promotion?: string) => {
-      console.log('a');
       sendMove(from, to, promotion ?? '');
     },
     [sendMove],

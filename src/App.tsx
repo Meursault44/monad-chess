@@ -13,10 +13,15 @@ function App() {
 
   useEffect(() => {
     if (didLoginRef.current) return;
-    if (authenticated && ready && user?.wallet?.address) {
+    console.log(user);
+    if (authenticated && ready && user?.id && user?.wallet?.address) {
       //  && !getAccessToken() - add
       didLoginRef.current = true;
-      mutateAsync({ address: user.wallet.address }).catch((e) => {
+      mutateAsync({
+        provider: 'monad',
+        providerAppId: user?.id,
+        providerUserId: user?.wallet?.address,
+      }).catch((e) => {
         console.error('Login mutation error', e);
         didLoginRef.current = false; // разрешим повтор через последующие изменения
       });

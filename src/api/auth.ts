@@ -10,10 +10,20 @@ export type LoginResponse = {
   user: User;
 };
 
-export async function loginRequest(address: string): Promise<LoginResponse> {
+type LoginRequest = {
+  provider: string;
+  providerUserId: string;
+  providerAppId: string;
+};
+
+export async function loginRequest({
+  provider,
+  providerUserId,
+  providerAppId,
+}: LoginRequest): Promise<LoginResponse> {
   const res = await apiFetch('/auth/login-global', {
     method: 'POST',
-    body: JSON.stringify({ address, providerAppId: 'cmd8euall0037le0my79qpz42' }),
+    body: JSON.stringify({ provider, providerUserId, providerAppId }),
   });
   if (!res.ok) throw new Error('Login failed');
   return res.json();
@@ -25,8 +35,9 @@ export function finishAuth({ token, user }: LoginResponse) {
 }
 
 export function useLoginMutation() {
-  return useMutation<LoginResponse, Error, { address: string }>({
-    mutationFn: async ({ address }) => loginRequest(address),
+  return useMutation<LoginResponse, Error, LoginRequest>({
+    mutationFn: async ({ provider, providerUserId, providerAppId }) =>
+      loginRequest({ provider, providerUserId, providerAppId }),
     onSuccess: (data) => {
       finishAuth(data);
     },

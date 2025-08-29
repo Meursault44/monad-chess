@@ -5,7 +5,6 @@ import { useChessStore } from '@/store/chess';
 import { useDialogsStore } from '@/store/dialogs';
 import { useSoundEffects, useCustomPieces } from '@/hooks';
 import PromotionOverlay from '@/components/PromotionOverlay';
-import type { OpponentLogic, OpponentCtx } from '@/hooks/useRandomOpponent';
 import { type PieceHandlerArgs } from 'react-chessboard';
 
 type SquaresStylesType = Partial<Record<Square, React.CSSProperties>>;
@@ -94,7 +93,7 @@ export default function ChessBoardWrapper({
   onMyMove,
   mode,
 }: {
-  onOpponentTurn?: OpponentLogic;
+  onOpponentTurn?: any;
   onMyMove?: (from: Square, to: Square, promotion: string) => void;
   validateMove?: (uci: string) => boolean;
   showDialogWinGame?: boolean;
@@ -160,7 +159,7 @@ export default function ChessBoardWrapper({
   // Вызываем переданную логику с контекстом. Если пропс не указан — ничего не делаем.
   useEffect(() => {
     if (!onOpponentTurn) return;
-    const ctx: OpponentCtx = {
+    const ctx = {
       phase,
       playerSide,
       turn,

@@ -33,7 +33,6 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
     setStatus('connecting');
 
     const handleOpen = () => {
-      console.log(token, room);
       // авторизация
       ws.send(
         JSON.stringify({
@@ -102,7 +101,6 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
   const sendMove = (from: Square, to: Square, promotion: string = '') => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    console.log(from, to, promotion);
     ws.send(
       JSON.stringify({
         type: 'move',

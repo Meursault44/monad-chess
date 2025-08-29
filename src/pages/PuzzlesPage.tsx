@@ -1,15 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getRandomPuzzle, getPuzzleGreetings, analyzePuzzle } from '@/api/puzzles';
-import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
 import { Button, Heading, Image, HStack, VStack, Progress, Text, Box } from '@chakra-ui/react';
 import { usePuzzleEngine } from '@/hooks/usePuzzleEngine';
 import { useChessStore } from '@/store/chess.ts';
+import { usePuzzleEffects } from '@/store/puzzleEffects.ts';
 import PuzzleLogo from '/puzzle2.png';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
 import assistent from '@/assets/assistent.png';
 import { AnalyseToolWrapper } from '@/components/AnalyseToolWrapper.tsx';
 import { ThreeDotsWave } from '@/components/ThreeDotsWave.tsx';
+import { ChessBoardWithMotion } from '@/components/ChessBoardWithMotion.tsx';
+import RippleLayer from '@/components/RippleLayer';
+import { AnimatedNumber } from '@/components/AnimatedNumber.tsx';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -51,10 +54,16 @@ export const PuzzlesPage = () => {
   const setAssistantMessage = usePuzzlesStore((s) => s.setAssistantMessage);
   const assistantMessage = usePuzzlesStore((s) => s.assistantMessage);
   const rating = usePuzzlesStore((s) => s.rating);
+  const [ratingLocal, setRatingLocal] = useState(rating);
   const ratingChange = usePuzzlesStore((s) => s.ratingChange);
   const isPendingAssistantMessage = usePuzzlesStore((s) => s.isPendingAssistantMessage);
   const setIsPendingAssistantMessage = usePuzzlesStore((s) => s.setIsPendingAssistantMessage);
   const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
+  const animationDone = usePuzzleEffects((s) => s.animationDone);
+  const setAnimationDone = usePuzzleEffects((s) => s.setAnimationDone);
+  const triggerWinAnimation = usePuzzleEffects((s) => s.triggerWinAnimation);
+
+  const progressRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (greetings) {
@@ -76,15 +85,27 @@ export const PuzzlesPage = () => {
     }
   }, [dataAnalyze?.text, setAssistantMessage]);
 
+  useEffect(() => {
+    if (animationDone) {
+      setRatingLocal(rating);
+      setAnimationDone(false);
+      triggerWinAnimation(null);
+    }
+    if ((!ratingLocal && rating) || ratingLocal > rating) {
+      setRatingLocal(rating || 1);
+    }
+  }, [animationDone, setRatingLocal, rating, ratingLocal]);
+
   return (
     <div className="flex gap-[3rem]">
-      <ChessBoardWrapper
+      <ChessBoardWithMotion
         onOpponentTurn={opponentLogic}
         validateMove={validateMove}
         mode={'puzzle'}
+        targetEl={progressRef.current}
       />
       <AnalyseToolWrapper title={'Puzzles'} logoSrc={PuzzleLogo}>
-        <HStack mx="10px" alignItems="flex-end" w={'calc(100% - 20px)'} minHeight={'105px'}>
+        <HStack mx="10px" alignItems="flex-end" w={'calc(100% - 20px)'} minHeight={'160px'}>
           <Image src={assistent} alt="" width={'110px'} />
 
           <Box
@@ -96,7 +117,7 @@ export const PuzzlesPage = () => {
             py="8px"
             borderRadius="10px"
             boxShadow="md"
-            h={'100%'}
+            minHeight={'104px'}
             display={'flex'}
             alignItems={'center'}
           >
@@ -132,24 +153,31 @@ export const PuzzlesPage = () => {
             </Box>
           </Box>
         </HStack>
+        <RippleLayer color="#836EF9" />
         <VStack alignItems={'flex-start'}>
           <HStack>
-            <Heading color={'white'}>{rating || ''}</Heading>
+            <Heading color="white">
+              <AnimatedNumber value={ratingLocal ?? 0} />
+            </Heading>
             {!!ratingChange && ratingChange > 0 && (
-              <Heading color={'green'}> +{ratingChange}</Heading>
+              <Heading color={'rgba(38, 181, 97, 1)'}> +{ratingChange}</Heading>
             )}
-            {!!ratingChange && ratingChange < 0 && <Heading color={'red'}> {ratingChange}</Heading>}
+            {!!ratingChange && ratingChange < 0 && (
+              <Heading color={'rgba(210, 56, 70, 1)'}> {ratingChange}</Heading>
+            )}
           </HStack>
-          <Progress.Root value={Number(rating) % 100} minW="320px">
-            <HStack>
-              <Progress.Track h={'20px'} borderRadius={'10px'} flex={'1'}>
-                <Progress.Range bg={'#836EF9'} />
-              </Progress.Track>
-              <Text fontSize={'20px'} color={'white'}>
-                {!!rating && Math.trunc(rating / 100) - 5} lvl
-              </Text>
-            </HStack>
-          </Progress.Root>
+          <div ref={progressRef}>
+            <Progress.Root value={Number(ratingLocal) % 100} minW="320px">
+              <HStack>
+                <Progress.Track h={'20px'} borderRadius={'10px'} flex={'1'}>
+                  <Progress.Range bg={'#836EF9'} />
+                </Progress.Track>
+                <Text fontSize={'20px'} color={'white'}>
+                  {!!rating && Math.trunc(rating / 100) - 5} lvl
+                </Text>
+              </HStack>
+            </Progress.Root>
+          </div>
         </VStack>
         <Box>
           <Button

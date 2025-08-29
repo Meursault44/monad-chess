@@ -16,6 +16,7 @@ export const AnalyseToolWrapper: FC<AnalyseToolWrapperType> = ({ logoSrc, title,
       border={'2px white solid'}
       borderRadius={'10px'}
       gap={'30px'}
+      position={'relative'}
       bg={'#17171A'}
     >
       <HStack
