@@ -94,7 +94,7 @@ export default function ChessBoardWrapper({
   mode,
 }: {
   onOpponentTurn?: any;
-  onMyMove?: (from: Square, to: Square, promotion: string) => void;
+  onMyMove?: (from: Square, to: Square, promotion?: string) => void;
   validateMove?: (uci: string) => boolean;
   showDialogWinGame?: boolean;
   mode?: 'puzzle' | 'game';
@@ -381,7 +381,7 @@ export default function ChessBoardWrapper({
 
     try {
       const moveInfo = applyMove({ from: moveFrom, to: square, promotion: 'q' });
-      onMyMove?.(moveFrom, square, 'q');
+      onMyMove?.(moveFrom, square);
       updateData();
 
       playMoveSound({ moveInfo, isCheck });
@@ -450,7 +450,7 @@ export default function ChessBoardWrapper({
       const moveInfo = applyMove({ from: sourceSquare, to: targetSquare, promotion: 'q' });
       if (!moveInfo) throw new Error('Invalid move');
 
-      onMyMove?.(sourceSquare, targetSquare, 'q');
+      onMyMove?.(sourceSquare, targetSquare);
       updateData();
 
       setMoveFrom(null);
@@ -542,6 +542,7 @@ export default function ChessBoardWrapper({
       return;
     }
     applyMove({ from: premove.from, to: premove.to, promotion: 'q' });
+    onMyMove?.(premove.from, premove.to);
     setPremove(null);
     setPremoveSquares({});
     updateData();
@@ -575,8 +576,8 @@ export default function ChessBoardWrapper({
         msUserSelect: 'none',
         position: 'relative',
         margin: 'auto',
-        width: '90vh',
-        height: '90vh',
+        width: mode === 'puzzle' ? '90vh' : 'calc(90vh - 100px)',
+        height: mode === 'puzzle' ? '90vh' : 'calc(90vh - 100px)',
       }}
     >
       <style>{badgeCss}</style>

@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router';
 import { AppLayout } from '@/components';
-import { HomePage, PuzzlesPage, PlayPageComputer } from '@/pages';
+import { HomePage, PuzzlesPage, PlayPageComputer, ReviewGamePage } from '@/pages';
 import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useRef } from 'react';
 import { useLoginMutation } from '@/api/auth';
@@ -36,6 +36,7 @@ function App() {
         <Route path="puzzles" element={<PuzzlesPage />} />
         <Route path="play">
           <Route path={'computer'} element={<PlayPageComputer />}></Route>
+          <Route path="computer/review/:id" element={<ReviewGamePage />} />
         </Route>
         <Route path="*" element={<h1>404</h1>} />
       </Route>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Square } from 'chess.js';
 import { useChessStore } from '@/store/chess.ts';
 import { refreshAccessToken } from '@/api/client.ts';
-import { createRoom } from '@/api/rooms.ts';
+import { useDialogsStore } from '@/store/dialogs.ts';
 
 export type OpponentMove = {
   from: Square;
@@ -14,7 +14,7 @@ type WsStatus = 'idle' | 'connecting' | 'open' | 'error' | 'closed';
 
 type UseChessWsOptions = {
   token: string;
-  room: string;
+  room: string | null;
   onOpponentMove: (move: OpponentMove) => void;
 };
 
@@ -24,6 +24,10 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [status, setStatus] = useState<WsStatus>('idle');
   const startGame = useChessStore((s) => s.startGame);
+  const setPhase = useChessStore((s) => s.setPhase);
+  const setDialogWinGame = useDialogsStore((s) => s.setDialogWinGame);
+  const setDialogLoseGame = useDialogsStore((s) => s.setDialogLoseGame);
+  const playerSide = useChessStore((s) => s.playerSide);
 
   useEffect(() => {
     if (!token || !room) return;
@@ -59,7 +63,13 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
           })();
         }
         if (msg?.type === 'game_over') {
-          // game over
+          setPhase('idle');
+          const side = playerSide === 'w' ? 'white' : playerSide === 'b' ? 'black' : 'random';
+          if (msg.result?.winner === side) {
+            setDialogWinGame(true);
+          } else {
+            setDialogLoseGame(true);
+          }
         }
 
         // ожидаем сообщения про ход соперника

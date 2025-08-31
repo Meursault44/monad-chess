@@ -7,12 +7,12 @@ import { useChessStore } from '@/store/chess.ts';
 import { usePuzzleEffects } from '@/store/puzzleEffects.ts';
 import PuzzleLogo from '/puzzle2.png';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
-import assistent from '@/assets/assistent.png';
-import { AnalyseToolWrapper } from '@/components/AnalyseToolWrapper.tsx';
+import { AnalyseToolWrapper } from '@/components';
 import { ThreeDotsWave } from '@/components/ThreeDotsWave.tsx';
 import { ChessBoardWithMotion } from '@/components/ChessBoardWithMotion.tsx';
 import RippleLayer from '@/components/RippleLayer';
 import { AnimatedNumber } from '@/components/AnimatedNumber.tsx';
+import { Assistant } from '@/components/Assistant.tsx';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -105,54 +105,7 @@ export const PuzzlesPage = () => {
         targetEl={progressRef.current}
       />
       <AnalyseToolWrapper title={'Puzzles'} logoSrc={PuzzleLogo}>
-        <HStack mx="10px" alignItems="flex-end" w={'calc(100% - 20px)'} minHeight={'160px'}>
-          <Image src={assistent} alt="" width={'110px'} />
-
-          <Box
-            position="relative"
-            flex="1"
-            bg="white"
-            color="black"
-            px="10px"
-            py="8px"
-            borderRadius="10px"
-            boxShadow="md"
-            minHeight={'104px'}
-            display={'flex'}
-            alignItems={'center'}
-          >
-            <Box w={'100%'} display={'flex'} justifyContent={'center'}>
-              {isPendingAssistantMessage ? (
-                <ThreeDotsWave />
-              ) : (
-                <Text lineHeight="1.2" fontSize="16px">
-                  {assistantMessage}
-                </Text>
-              )}
-            </Box>
-
-            {/* хвостик слева — указывает на ассистента */}
-            <Box
-              as="svg"
-              viewBox="0 0 15 22"
-              w="15px"
-              h="22px"
-              position="absolute"
-              bottom="20px"
-              left="-15px"
-              transform="translateY(-50%)"
-              color="white" // цвет хвостика = фону пузыря
-              pointerEvents="none"
-              style={{ filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.06))' }}
-              aria-hidden
-            >
-              <path
-                d="M0 14C8.4 14 12.8333 4.66667 15 0V22C15 22 3.5 22 0 14Z"
-                fill="currentColor"
-              />
-            </Box>
-          </Box>
-        </HStack>
+        <Assistant message={assistantMessage} isPending={isPendingAssistantMessage} />
         <RippleLayer color="#836EF9" />
         <VStack alignItems={'flex-start'}>
           <HStack>

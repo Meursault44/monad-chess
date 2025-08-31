@@ -3,25 +3,25 @@ import { useDialogsStore } from '@/store/dialogs';
 import { useEffect } from 'react';
 import { useSoundEffects } from '@/hooks';
 
-export const DialogSolvedPuzzle = () => {
-  const { dialogSolvedPuzzle, setDialogSolvedPuzzle } = useDialogsStore();
-  const { playPuzzleCorrectSfx } = useSoundEffects();
+export const DialogLoseGame = () => {
+  const { dialogLoseGame, setDialogLoseGame } = useDialogsStore();
+  const { playGameLoseLongSfx } = useSoundEffects();
 
   useEffect(() => {
-    if (dialogSolvedPuzzle) {
-      playPuzzleCorrectSfx();
+    if (dialogLoseGame) {
+      playGameLoseLongSfx();
     }
-  }, [playPuzzleCorrectSfx, dialogSolvedPuzzle]);
+  }, [playGameLoseLongSfx, dialogLoseGame]);
 
   return (
     <>
-      <Dialog.Root open={dialogSolvedPuzzle} onOpenChange={(e) => setDialogSolvedPuzzle(e?.open)}>
+      <Dialog.Root open={dialogLoseGame} onOpenChange={(e) => setDialogLoseGame(e?.open)}>
         <Portal>
           <Dialog.Backdrop />
           <Dialog.Positioner>
             <Dialog.Content maxW="400px">
               <Dialog.Header>
-                <Dialog.Title>You have successfully solved the puzzle !!!</Dialog.Title>
+                <Dialog.Title>You lose!!!</Dialog.Title>
               </Dialog.Header>
               <Dialog.Body>gg</Dialog.Body>
               <Dialog.CloseTrigger asChild>
