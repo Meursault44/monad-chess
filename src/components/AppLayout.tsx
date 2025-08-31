@@ -1,7 +1,7 @@
 import { type FC } from 'react';
 import { Sidebar } from '@/components/Sidebar.tsx';
 import { HStack } from '@chakra-ui/react';
-import { DialogWinGame, DialogLoseGame } from '@/components/Dialogs';
+import { DialogWinGame, DialogLoseGame, DialogLogin } from '@/components/Dialogs';
 import { Outlet } from 'react-router';
 
 export const AppLayout: FC = () => {
@@ -11,6 +11,7 @@ export const AppLayout: FC = () => {
       <Outlet />
       <DialogWinGame />
       <DialogLoseGame />
+      <DialogLogin />
     </HStack>
   );
 };

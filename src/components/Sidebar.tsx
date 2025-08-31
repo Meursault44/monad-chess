@@ -1,4 +1,4 @@
-import { VStack } from '@chakra-ui/react';
+import { VStack, HStack } from '@chakra-ui/react';
 import { Link as ChakraLink, Image } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router';
 import Logo from '/Logo.png';
@@ -113,7 +113,9 @@ export const Sidebar = () => {
           <Image src={tournaments} alt="" width="34px" ml={'6px'} pr={'6px'} /> Tournaments
         </ChakraLink>
       </VStack>
-      <AuthButtons />
+      <HStack mb={'40px'} p={'0 20px'} display={'flex'} justifyContent={'center'}>
+        <AuthButtons />
+      </HStack>
     </VStack>
   );
 };
