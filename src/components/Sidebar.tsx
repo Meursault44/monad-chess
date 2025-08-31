@@ -6,6 +6,7 @@ import PuzzleLogo from '/puzzle2.png';
 import play from '/play.png';
 import bots from '/bots.png';
 import tournaments from '/tournaments.png';
+import profile from '/profile.svg';
 
 import { AuthButtons } from '@/components/AuthButton.tsx';
 
@@ -62,7 +63,7 @@ export const Sidebar = () => {
           color={'white'}
           height={'50px'}
           p={'10px'}
-          gap={'0.5rem'}
+          gap={'0.4rem'}
           fontSize={'18px'}
           _hover={{
             backgroundColor: '#1E1C24',
@@ -72,7 +73,7 @@ export const Sidebar = () => {
             outline: 'none',
           }}
         >
-          <Image src={bots} alt="" width="37px" ml={'2px'} />
+          <Image src={bots} alt="" width="39px" ml={'2px'} />
           Play bots
         </ChakraLink>
         <ChakraLink
@@ -93,6 +94,24 @@ export const Sidebar = () => {
         >
           <Image src={PuzzleLogo} alt="" width="37px" ml={'4px'} />
           Puzzles
+        </ChakraLink>
+        <ChakraLink
+          as={RouterLink}
+          to="/profile"
+          height={'50px'}
+          color={'white'}
+          p={'10px'}
+          gap={'0.4rem'}
+          fontSize={'18px'}
+          _hover={{
+            backgroundColor: '#1E1C24',
+            textDecoration: 'none',
+          }}
+          _focus={{
+            outline: 'none',
+          }}
+        >
+          <Image src={profile} alt="" width="36px" ml={'6px'} pr={'4px'} /> Profile
         </ChakraLink>
         <ChakraLink
           as={RouterLink}

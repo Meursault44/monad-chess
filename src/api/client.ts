@@ -26,7 +26,7 @@ export async function apiFetch(input: string, init: RequestInit = {}) {
 
   if (!token) {
     setDialogLogin(true);
-    return null;
+    return { ok: false, json: () => '' };
   }
 
   if (token) headers.set('Authorization', `Bearer ${token}`);

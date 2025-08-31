@@ -7,28 +7,35 @@ import {
   ReviewGamePage,
   TournamentsPage,
   PlayPage,
+  ProfilePage,
 } from '@/pages';
 import { usePrivy } from '@privy-io/react-auth';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useLoginMutation } from '@/api/auth';
-import { getAccessToken } from '@/store/auth.ts';
 
 function App() {
   const { ready, authenticated, user } = usePrivy();
   const { mutateAsync } = useLoginMutation();
 
+  const userAddress = useMemo(
+    () =>
+      user?.linkedAccounts.find((i) => i?.providerApp?.id === 'cmd8euall0037le0my79qpz42')
+        ?.embeddedWallets[0]?.address,
+    [user?.linkedAccounts],
+  );
+
   useEffect(() => {
-    if (authenticated && ready && user?.id && user?.wallet?.address) {
+    if (authenticated && ready && user?.id && userAddress) {
       //  && !getAccessToken() - add
       mutateAsync({
         provider: 'monad',
         providerAppId: user?.id,
-        providerUserId: user?.wallet?.address,
+        providerUserId: userAddress,
       }).catch((e) => {
         console.error('Login mutation error', e);
       });
     }
-  }, [authenticated, ready, user?.wallet?.address, mutateAsync]);
+  }, [authenticated, ready, userAddress, mutateAsync]);
 
   return (
     <Routes>
@@ -38,6 +45,7 @@ function App() {
         <Route path="puzzles" element={<PuzzlesPage />} />
         <Route path="tournaments" element={<TournamentsPage />} />
         <Route path="play" element={<PlayPage />}></Route>
+        <Route path="profile" element={<ProfilePage />}></Route>
         <Route path="play/computer" element={<PlayPageComputer />}></Route>
         <Route path="play/computer/review/:id" element={<ReviewGamePage />} />
         <Route path="*" element={<h1>404</h1>} />
