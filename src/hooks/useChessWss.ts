@@ -28,6 +28,7 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
   const setDialogWinGame = useDialogsStore((s) => s.setDialogWinGame);
   const setDialogLoseGame = useDialogsStore((s) => s.setDialogLoseGame);
   const playerSide = useChessStore((s) => s.playerSide);
+  const setPlayerSide = useChessStore((s) => s.setPlayerSide);
 
   useEffect(() => {
     if (!token || !room) return;
@@ -62,7 +63,11 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
             }
           })();
         }
+        if (msg?.type === 'game_state') {
+          setPlayerSide(msg?.black === 'BOT' ? 'w' : 'b');
+        }
         if (msg?.type === 'game_over') {
+          debugger;
           setPhase('idle');
           const side = playerSide === 'w' ? 'white' : playerSide === 'b' ? 'black' : 'random';
           if (msg.result?.winner === side) {

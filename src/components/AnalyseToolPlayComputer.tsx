@@ -13,7 +13,7 @@ import { Link } from 'react-router';
 const sideItems = [
   { label: 'White', value: 'w' as const },
   { label: 'Black', value: 'b' as const },
-  { label: 'Random', value: 'random' as const },
+  { label: 'Random', value: null as const },
 ];
 
 type AnalyseToolType = {
@@ -111,7 +111,7 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
             <RadioGroup.Root
               disabled={phase === 'playing'}
               onValueChange={(e) => {
-                const v = e.value as 'w' | 'b' | 'random';
+                const v = e.value as 'w' | 'b' | null;
                 setPlayer(v);
               }}
             >

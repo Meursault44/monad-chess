@@ -89,14 +89,12 @@ type CustomCss = string | string[];
 export default function ChessBoardWrapper({
   onOpponentTurn,
   validateMove,
-  showDialogWinGame,
   onMyMove,
   mode,
 }: {
   onOpponentTurn?: any;
   onMyMove?: (from: Square, to: Square, promotion?: string) => void;
   validateMove?: (uci: string) => boolean;
-  showDialogWinGame?: boolean;
   mode?: 'puzzle' | 'game';
 }) {
   // --- Store API ---
@@ -281,7 +279,6 @@ export default function ChessBoardWrapper({
       setRcSquares({});
 
       playMoveSound({ moveInfo, isCheck });
-      if (getGameStatus() === playerSide && showDialogWinGame) setDialogWinGame(true);
     } finally {
       setPromotionMove(null);
       setMoveFrom(null);
@@ -314,9 +311,7 @@ export default function ChessBoardWrapper({
           [from]: { backgroundColor: 'rgba(133, 201, 64, 0.8)' },
           [to]: { backgroundColor: 'rgba(133, 201, 64, 0.8)' },
         });
-        if (getGameStatus() === playerSide && showDialogWinGame) {
-          setDialogWinGame(true);
-        }
+
         return true;
       } catch {
         playIllegalSfx();
@@ -386,10 +381,6 @@ export default function ChessBoardWrapper({
 
       playMoveSound({ moveInfo, isCheck });
       setPossibleMovesSquares({});
-
-      if (getGameStatus() === playerSide && showDialogWinGame) {
-        setDialogWinGame(true);
-      }
     } catch {
       console.log('err');
     }

@@ -45,7 +45,7 @@ type ChessStoreActions = {
   getLastMoveSquares: () => { from: Square; to: Square } | null;
 
   // 🔸 новое:
-  setPlayerSide: (side: 'w' | 'b' | 'random') => void;
+  setPlayerSide: (side: 'w' | 'b' | null) => void;
   startGame: () => void;
   isPlayerTurn: () => boolean;
   resetGame: () => void;
@@ -195,14 +195,7 @@ export const useChessStore = create<ChessStore>()((set, get) => {
     },
 
     // ---------- новое ----------
-    setPlayerSide: (side) => {
-      if (side === 'random') {
-        const rnd = Math.random() < 0.5 ? 'w' : 'b';
-        set({ playerSide: rnd as Color });
-      } else {
-        set({ playerSide: side as Color });
-      }
-    },
+    setPlayerSide: (side) => set({ playerSide: side }),
 
     startGame: () => {
       const { playerSide } = get();
