@@ -18,3 +18,11 @@ export async function getProfileExperience(): Promise<Puzzle> {
   if (!res.ok) throw new Error('Failed to fetch ProfileExperience');
   return res.json();
 }
+
+export async function profileUpdateRating(): Promise<Puzzle> {
+  const res = await apiFetch(`/profile/updateRating`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Failed to fetch ProfileExperience');
+  return res.json();
+}

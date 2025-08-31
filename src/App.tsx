@@ -12,6 +12,7 @@ import {
 import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useRef, useMemo } from 'react';
 import { useLoginMutation } from '@/api/auth';
+import { profileUpdateRating } from '@/api/profile.ts';
 
 function App() {
   const { ready, authenticated, user } = usePrivy();
@@ -31,9 +32,13 @@ function App() {
         provider: 'monad',
         providerAppId: user?.id,
         providerUserId: userAddress,
-      }).catch((e) => {
-        console.error('Login mutation error', e);
-      });
+      })
+        .then(async () => {
+          profileUpdateRating();
+        })
+        .catch((e) => {
+          console.error('Login mutation error', e);
+        });
     }
   }, [authenticated, ready, userAddress, mutateAsync]);
 
