@@ -23,11 +23,11 @@ type AnalyseToolType = {
 export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
   const timeline = useChessStore((s) => s.timelineSan);
   const currentPly = useChessStore((s) => s.currentPly);
-  const turn = useChessStore((s) => s.turn);
   const setBotId = usePlayBotsStore((s) => s.setBotId);
   const botId = usePlayBotsStore((s) => s.botId);
+  const setBotAvatar = usePlayBotsStore((s) => s.setBotAvatar);
 
-  const { data: botsData, refetch } = useQuery({
+  const { data: botsData } = useQuery({
     queryKey: ['bots'],
     queryFn: getBots,
   });
@@ -39,14 +39,10 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
   // управление партией (из стора)
   const phase = useChessStore((s) => s.phase); // 'idle' | 'playing' | 'finished'
   const resetGame = useChessStore((s) => s.resetGame); // 'idle' | 'playing' | 'finished'
-  const playerSide = useChessStore((s) => s.playerSide); // 'w' | 'b' | null
+
   const setPlayer = useChessStore((s) => s.setPlayerSide);
   const roomId = useReviewGameStore((s) => s.id);
   const setDialogLoseGame = useDialogsStore((s) => s.setDialogLoseGame);
-
-  const undo = useChessStore((s) => s.undo);
-  const redo = useChessStore((s) => s.redo);
-  const goToPly = useChessStore((s) => s.goToPly);
 
   const data = useMemo(() => {
     const rows: Array<{
@@ -77,6 +73,13 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
       setDialogLoseGame(true);
     }
   }, [dataPassGame]);
+
+  useEffect(() => {
+    if (Array.isArray(botsData?.bots) && botId) {
+      const avatar = botsData?.bots.find((b) => b.id === botId)?.avatar;
+      setBotAvatar(avatar);
+    }
+  }, [botId, botsData?.bots, setBotAvatar]);
 
   return (
     <AnalyseToolWrapper title={'Play Bots'} logoSrc={playBotsLogo}>
@@ -179,17 +182,6 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
           )}
         </VStack>
       )}
-
-      {/* Навигация */}
-      {/*<VStack align="stretch" p="10px" spacing="8px">*/}
-      {/*  <Button size="sm" bg={'gray'} onClick={() => undo()}>*/}
-      {/*    &larr; Назад*/}
-      {/*  </Button>*/}
-      {/*  <Button size="sm" bg={'gray'} onClick={() => redo()}>*/}
-      {/*    &rarr; Вперёд*/}
-      {/*  </Button>*/}
-      {/*  <Text color="white">{turn === 'w' ? 'Your move' : "Opponent's move"}</Text>*/}
-      {/*</VStack>*/}
     </AnalyseToolWrapper>
   );
 };

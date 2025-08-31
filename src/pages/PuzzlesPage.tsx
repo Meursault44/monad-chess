@@ -134,7 +134,7 @@ export const PuzzlesPage = () => {
                   <Progress.Range bg={'#836EF9'} />
                 </Progress.Track>
                 <Text fontSize={'20px'} color={'white'}>
-                  {!!rating && Math.trunc(rating / 100) - 5} lvl
+                  {!!rating && Math.trunc(rating / 100) - 4} lvl
                 </Text>
               </HStack>
             </Progress.Root>

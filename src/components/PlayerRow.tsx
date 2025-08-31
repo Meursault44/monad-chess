@@ -1,12 +1,18 @@
+import type { FC } from 'react';
 import avatar from '../assets/Asuka.jpg';
 import { Image } from '@chakra-ui/react';
+import { HStack } from '@chakra-ui/react';
 
-export const PlayerRow = () => {
+type PlayerRow = {
+  src?: string;
+  m?: string;
+};
+
+export const PlayerRow: FC<PlayerRow> = ({ src = avatar, m }) => {
   return (
-    <div className={'flex h-[50px] gap-2'}>
-      <Image src={avatar} alt="avatar" h={'100%'} />
+    <HStack height={'40px'} margin={m ?? 'auto'}>
+      <Image src={src} alt="avatar" h={'100%'} />
       <div className={'text-white'}>Asuka Langley</div>
-      <div className={'text-white opacity-[0.6]'}>(800)</div>
-    </div>
+    </HStack>
   );
 };

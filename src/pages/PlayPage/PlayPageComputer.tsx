@@ -8,6 +8,7 @@ import { useReviewGameStore } from '@/store/reviewGame.ts';
 import { createRoom } from '@/api/rooms.ts';
 import { useChessWs } from '@/hooks/useChessWss.ts';
 import type { Square } from 'chess.js';
+import { usePlayBotsStore } from '@/store/playBots.ts';
 
 export const PlayPageComputer = () => {
   const token = useAuthStore((s) => s.accessToken);
@@ -18,6 +19,7 @@ export const PlayPageComputer = () => {
   const phase = useChessStore((s) => s.phase);
   const roomId = useReviewGameStore((s) => s.id);
   const setRoomId = useReviewGameStore((s) => s.setId);
+  const botAvatar = usePlayBotsStore((s) => s.botAvatar);
 
   const startGame = useCallback(
     (botId: number) => {
@@ -72,9 +74,9 @@ export const PlayPageComputer = () => {
   return (
     <HStack justify={'center'} gap={'3rem'}>
       <div className="my-auto flex flex-col">
-        <PlayerRow />
+        <PlayerRow src={botAvatar} m={'0 0 10px 0'} />
         <ChessBoardWrapper showDialogWinGame={true} onMyMove={onMyMove} />
-        <PlayerRow />
+        <PlayerRow m={'10px 0 0 0'} />
       </div>
       <AnalyseToolPlayComputer startGame={startGame} />
     </HStack>
