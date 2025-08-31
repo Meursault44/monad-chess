@@ -13,6 +13,7 @@ import { ChessBoardWithMotion } from '@/components/ChessBoardWithMotion.tsx';
 import RippleLayer from '@/components/RippleLayer';
 import { AnimatedNumber } from '@/components/AnimatedNumber.tsx';
 import { Assistant } from '@/components/Assistant.tsx';
+import { useAuthStore } from '@/store/auth.ts';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -62,6 +63,7 @@ export const PuzzlesPage = () => {
   const animationDone = usePuzzleEffects((s) => s.animationDone);
   const setAnimationDone = usePuzzleEffects((s) => s.setAnimationDone);
   const triggerWinAnimation = usePuzzleEffects((s) => s.triggerWinAnimation);
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   const progressRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +97,12 @@ export const PuzzlesPage = () => {
       setRatingLocal(rating || 1);
     }
   }, [animationDone, setRatingLocal, rating, ratingLocal]);
+
+  useEffect(() => {
+    if (accessToken) {
+      refetchGreetings();
+    }
+  }, [accessToken, refetchGreetings]);
 
   return (
     <div className="flex gap-[3rem]">

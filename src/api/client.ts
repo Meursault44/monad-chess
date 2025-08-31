@@ -1,5 +1,6 @@
 import { getAccessToken, setAccessToken } from '@/store/auth.ts';
 import { QueryClient } from '@tanstack/react-query';
+import { setDialogLogin } from '@/store/dialogs.ts';
 
 // Эндпоинты — проверьте реальные пути на бэке
 const REFRESH_PATH = '/auth/refresh';
@@ -22,6 +23,12 @@ export async function refreshAccessToken(): Promise<string | null> {
 export async function apiFetch(input: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});
   const token = getAccessToken();
+
+  if (!token) {
+    setDialogLogin(true);
+    return null;
+  }
+
   if (token) headers.set('Authorization', `Bearer ${token}`);
   if (!headers.has('Content-Type') && init.body && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');

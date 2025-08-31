@@ -78,8 +78,6 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
     }
   }, [dataPassGame]);
 
-  console.log(phase);
-
   return (
     <AnalyseToolWrapper title={'Play Bots'} logoSrc={playBotsLogo}>
       {phase === 'idle' && (

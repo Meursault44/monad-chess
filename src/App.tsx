@@ -16,21 +16,16 @@ import { getAccessToken } from '@/store/auth.ts';
 function App() {
   const { ready, authenticated, user } = usePrivy();
   const { mutateAsync } = useLoginMutation();
-  const didLoginRef = useRef(false);
 
   useEffect(() => {
-    if (didLoginRef.current) return;
-    console.log(user);
     if (authenticated && ready && user?.id && user?.wallet?.address) {
       //  && !getAccessToken() - add
-      didLoginRef.current = true;
       mutateAsync({
         provider: 'monad',
         providerAppId: user?.id,
         providerUserId: user?.wallet?.address,
       }).catch((e) => {
         console.error('Login mutation error', e);
-        didLoginRef.current = false; // разрешим повтор через последующие изменения
       });
     }
   }, [authenticated, ready, user?.wallet?.address, mutateAsync]);

@@ -1,4 +1,3 @@
-import { apiFetch } from './client';
 import { type User } from '@/store/auth.ts';
 import { useAuthStore } from '@/store/auth';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
@@ -16,13 +15,19 @@ type LoginRequest = {
   providerAppId: string;
 };
 
+const API_URL = import.meta.env['VITE_API_BASE_URL'];
+
 export async function loginRequest({
   provider,
   providerUserId,
   providerAppId,
 }: LoginRequest): Promise<LoginResponse> {
-  const res = await apiFetch('/auth/login-global', {
+  const res = await fetch(`${API_URL}/auth/login-global`, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // чтобы refresh-cookie установилась
     body: JSON.stringify({ provider, providerUserId, providerAppId }),
   });
   if (!res.ok) throw new Error('Login failed');
