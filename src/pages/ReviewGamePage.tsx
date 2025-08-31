@@ -8,7 +8,7 @@ import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
 import { useChessStore } from '@/store/chess';
 import type { AnalysesType } from '@/store/reviewGame.ts';
 import { Image } from '@chakra-ui/react';
-import { wP, bP, wN, bN, wB, bB, wK, bK, wR, bR, bQ, wQ } from '../assets/pieces';
+import { wP, bP, wN, bN, wB, bB, wK, bK, wR, bR, bQ, wQ } from '@/assets/pieces';
 import type { PieceSymbol } from 'chess.js';
 
 const piecesSrc = {

@@ -1,12 +1,14 @@
-export { default as wP } from './wP.png';
-export { default as bP } from './bP.png';
-export { default as wN } from './wN.png';
-export { default as bN } from './bN.png';
-export { default as wB } from './wB.png';
-export { default as bB } from './bB.png';
-export { default as wR } from './wR.png';
-export { default as bR } from './bR.png';
-export { default as wK } from './wK.png';
-export { default as bK } from './bK.png';
-export { default as wQ } from './wQ.png';
-export { default as bQ } from './bQ.png';
+import wP from './wP.png';
+import bP from './bP.png';
+import wN from './wN.png';
+import bN from './bN.png';
+import wB from './wB.png';
+import bB from './bB.png';
+import wR from './wR.png';
+import bR from './bR.png';
+import wQ from './wQ.png';
+import bQ from './bQ.png';
+import wK from './wK.png';
+import bK from './bK.png';
+
+export { wP, bP, wN, bN, wB, bB, wR, bR, wQ, bQ, wK, bK };

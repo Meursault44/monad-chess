@@ -26,6 +26,7 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
   const setBotId = usePlayBotsStore((s) => s.setBotId);
   const botId = usePlayBotsStore((s) => s.botId);
   const setBotAvatar = usePlayBotsStore((s) => s.setBotAvatar);
+  const setBotName = usePlayBotsStore((s) => s.setBotName);
 
   const { data: botsData } = useQuery({
     queryKey: ['bots'],
@@ -76,10 +77,11 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
 
   useEffect(() => {
     if (Array.isArray(botsData?.bots) && botId) {
-      const avatar = botsData?.bots.find((b) => b.id === botId)?.avatar;
-      setBotAvatar(avatar);
+      const bot = botsData?.bots.find((b) => b.id === botId);
+      setBotAvatar(bot?.avatar);
+      setBotName(bot?.name);
     }
-  }, [botId, botsData?.bots, setBotAvatar]);
+  }, [botId, botsData, setBotAvatar, setBotName]);
 
   return (
     <AnalyseToolWrapper title={'Play Bots'} logoSrc={playBotsLogo}>

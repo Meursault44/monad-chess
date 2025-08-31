@@ -20,6 +20,7 @@ export const PlayPageComputer = () => {
   const roomId = useReviewGameStore((s) => s.id);
   const setRoomId = useReviewGameStore((s) => s.setId);
   const botAvatar = usePlayBotsStore((s) => s.botAvatar);
+  const botName = usePlayBotsStore((s) => s.botName);
 
   const startGame = useCallback(
     (botId: number) => {
@@ -74,9 +75,9 @@ export const PlayPageComputer = () => {
   return (
     <HStack justify={'center'} gap={'3rem'}>
       <div className="my-auto flex flex-col">
-        <PlayerRow src={botAvatar} m={'0 0 10px 0'} />
+        <PlayerRow src={botAvatar} name={botName} m={'0 0 10px 0'} />
         <ChessBoardWrapper showDialogWinGame={true} onMyMove={onMyMove} />
-        <PlayerRow m={'10px 0 0 0'} />
+        <PlayerRow m={'10px 0 0 0'} name={'You'} />
       </div>
       <AnalyseToolPlayComputer startGame={startGame} />
     </HStack>
