@@ -6,7 +6,7 @@ import { Outlet } from 'react-router';
 
 export const AppLayout: FC = () => {
   return (
-    <HStack gap={'3rem'}>
+    <HStack gap={'3rem'} paddingRight={'3rem'}>
       <Sidebar />
       <Outlet />
       <DialogWinGame />

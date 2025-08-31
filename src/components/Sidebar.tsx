@@ -40,7 +40,7 @@ export const Sidebar = () => {
         </ChakraLink>
         <ChakraLink
           as={RouterLink}
-          to="/"
+          to="/play"
           color={'white'}
           p={'10px'}
           gap={'0.5rem'}
@@ -96,7 +96,7 @@ export const Sidebar = () => {
         </ChakraLink>
         <ChakraLink
           as={RouterLink}
-          to="/"
+          to="/tournaments"
           height={'50px'}
           color={'white'}
           p={'10px'}
