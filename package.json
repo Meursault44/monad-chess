@@ -24,6 +24,7 @@
     "react-chessboard": "^5.2.2",
     "react-dom": "^19.1.1",
     "react-router": "^7.8.1",
+    "recharts": "^3.1.2",
     "tailwindcss": "^4.1.11",
     "use-sound": "^5.0.0",
     "zustand": "^5.0.7"

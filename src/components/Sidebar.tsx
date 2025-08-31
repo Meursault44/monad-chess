@@ -13,12 +13,15 @@ import { AuthButtons } from '@/components/AuthButton.tsx';
 export const Sidebar = () => {
   return (
     <VStack
+      position="sticky"
+      top="0"
+      bottom="0"
       h="100vh"
       w="210px"
       bg="#25232C"
       justify="space-between"
-      color={'white'}
-      borderRadius={'0 15px 15px 0'}
+      color="white"
+      borderRadius="0 15px 15px 0"
       align="stretch"
       flexShrink={0}
     >
