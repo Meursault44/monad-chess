@@ -15,11 +15,10 @@ export const AuthButtons = () => {
     () =>
       user?.linkedAccounts.find((i) => i?.providerApp?.id === 'cmd8euall0037le0my79qpz42')
         ?.embeddedWallets[0]?.address,
-    [user?.linkedAccounts],
+    [user],
   );
 
   if (!ready) return null;
-
   return authenticated && accessToken ? (
     <Button
       onClick={async () => {

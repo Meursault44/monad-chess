@@ -10,7 +10,7 @@ import {
   ProfilePage,
 } from '@/pages';
 import { usePrivy } from '@privy-io/react-auth';
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLoginMutation } from '@/api/auth';
 import { profileUpdateRating } from '@/api/profile.ts';
 
@@ -22,7 +22,7 @@ function App() {
     () =>
       user?.linkedAccounts.find((i) => i?.providerApp?.id === 'cmd8euall0037le0my79qpz42')
         ?.embeddedWallets[0]?.address,
-    [user?.linkedAccounts],
+    [user],
   );
 
   useEffect(() => {
@@ -40,7 +40,7 @@ function App() {
           console.error('Login mutation error', e);
         });
     }
-  }, [authenticated, ready, user?.id, userAddress, mutateAsync]);
+  }, [authenticated, ready, user, userAddress, mutateAsync]);
 
   return (
     <Routes>
