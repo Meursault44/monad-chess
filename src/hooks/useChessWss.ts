@@ -3,6 +3,8 @@ import type { Square } from 'chess.js';
 import { useChessStore } from '@/store/chess.ts';
 import { refreshAccessToken } from '@/api/client.ts';
 import { useDialogsStore } from '@/store/dialogs.ts';
+import { useMutation } from '@tanstack/react-query';
+import { passGame } from '@/api/rooms.ts';
 
 export type OpponentMove = {
   from: Square;
@@ -23,29 +25,35 @@ const wsUrl = import.meta.env['VITE_WSS_BASE_URL'];
 export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [status, setStatus] = useState<WsStatus>('idle');
+
   const startGame = useChessStore((s) => s.startGame);
-  const setPhase = useChessStore((s) => s.setPhase);
+  const resetGame = useChessStore((s) => s.resetGame);
   const setDialogWinGame = useDialogsStore((s) => s.setDialogWinGame);
   const setDialogLoseGame = useDialogsStore((s) => s.setDialogLoseGame);
   const playerSide = useChessStore((s) => s.playerSide);
   const setPlayerSide = useChessStore((s) => s.setPlayerSide);
 
+  // хранить актуальную сторону без протягивания в deps
+  const playerSideRef = useRef(playerSide);
   useEffect(() => {
-    if (!token || !room) return;
+    playerSideRef.current = playerSide;
+  }, [playerSide]);
 
+  const { mutate: mutatePassGame, data: dataPassGame } = useMutation({ mutationFn: passGame });
+
+  useEffect(() => {
+    // создаём сокет только когда реально есть данные
+    if (!token || !room) return;
+    // не пересоздаём, если уже открыт
+    if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) return;
+
+    console.log('init ws'); // будет дважды в dev StrictMode
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
     setStatus('connecting');
 
     const handleOpen = () => {
-      // авторизация
-      ws.send(
-        JSON.stringify({
-          type: 'auth',
-          token,
-          room,
-        }),
-      );
+      ws.send(JSON.stringify({ type: 'auth', token, room }));
       startGame();
       setStatus('open');
     };
@@ -63,39 +71,33 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
             }
           })();
         }
+
         if (msg?.type === 'game_state') {
           setPlayerSide(msg?.black === 'BOT' ? 'w' : 'b');
         }
+
         if (msg?.type === 'game_over') {
-          debugger;
-          setPhase('idle');
-          const side = playerSide === 'w' ? 'white' : playerSide === 'b' ? 'black' : 'random';
-          if (msg.result?.winner === side) {
-            setDialogWinGame(true);
-          } else {
-            setDialogLoseGame(true);
-          }
+          const side = playerSideRef.current === 'w' ? 'white' : 'black';
+          if (msg.result?.winner === side) setDialogWinGame(true);
+          else setDialogLoseGame(true);
+          resetGame();
+          ws.close();
+          wsRef.current = null;
         }
 
-        // ожидаем сообщения про ход соперника
         if (msg?.type === 'move') {
-          const move: OpponentMove = {
+          onOpponentMove({
             from: msg.from,
             to: msg.to,
             promotion: msg.promotion || '',
-          };
-          onOpponentMove(move);
+          });
         }
-
-        // при желании можно обрабатывать другие типы: join/leave/result/error и т.д.
       } catch {
-        // игнорируем некорректные сообщения
+        /* ignore */
       }
     };
 
-    const handleError = (e) => {
-      setStatus('error');
-    };
+    const handleError = () => setStatus('error');
     const handleClose = () => setStatus('closed');
 
     ws.addEventListener('open', handleOpen);
@@ -108,28 +110,33 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
       ws.removeEventListener('message', handleMessage);
       ws.removeEventListener('error', handleError);
       ws.removeEventListener('close', handleClose);
-      ws.close();
-      wsRef.current = null;
+      // Закрываем только если это всё ещё тот же инстанс
+      if (wsRef.current === ws) {
+        ws.close();
+        wsRef.current = null;
+      }
     };
-  }, [wsUrl, token, room, onOpponentMove]);
+    // ВАЖНО: только то, что реально требует пересоздания соединения
+  }, [token, room]); // не включаем wsRef.current, playerSide, resetGame, onOpponentMove
 
   const sendMove = (from: Square, to: Square, promotion: string = '') => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(
-      JSON.stringify({
-        type: 'move',
-        token,
-        room,
-        from,
-        to,
-        promotion,
-      }),
-    );
+    ws.send(JSON.stringify({ type: 'move', token, room, from, to, promotion }));
   };
 
-  return {
-    status,
-    sendMove,
+  useEffect(() => {
+    if (dataPassGame?.success) {
+      resetGame();
+      setDialogLoseGame(true);
+      wsRef.current?.close();
+      wsRef.current = null;
+    }
+  }, [dataPassGame, resetGame, setDialogLoseGame]);
+
+  const pass = () => {
+    if (room) mutatePassGame(room);
   };
+
+  return { status, sendMove, pass };
 }

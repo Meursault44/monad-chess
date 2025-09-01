@@ -50,7 +50,7 @@ export const PlayPageComputer = () => {
   );
 
   // 3) подключаемся к вебсокету, когда знаем roomId
-  const { status, sendMove } = useChessWs({
+  const { status, sendMove, pass } = useChessWs({
     token: token ?? '',
     room: roomId,
     onOpponentMove,
@@ -70,16 +70,16 @@ export const PlayPageComputer = () => {
       resetGame();
       setRoomId(null);
     };
-  }, []);
+  }, [resetGame, setRoomId]);
 
   return (
     <HStack justify={'center'} gap={'3rem'}>
       <div className="my-auto flex flex-col">
         <PlayerRow src={botAvatar} name={botName} m={'0 0 10px 0'} />
-        <ChessBoardWrapper showDialogWinGame={true} onMyMove={onMyMove} />
+        <ChessBoardWrapper onMyMove={onMyMove} />
         <PlayerRow m={'10px 0 0 0'} name={'You'} />
       </div>
-      <AnalyseToolPlayComputer startGame={startGame} />
+      <AnalyseToolPlayComputer startGame={startGame} pass={pass} />
     </HStack>
   );
 };

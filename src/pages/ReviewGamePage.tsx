@@ -117,7 +117,6 @@ function MoveCell(props: {
   piece?: string;
 }) {
   const { label, severity, onClick, active, piece } = props;
-  console.log(piece);
 
   if (!label) return <Text color="gray.400">—</Text>;
 
@@ -285,8 +284,6 @@ export const ReviewGamePage = () => {
       </HStack>
     );
   }
-
-  console.log(rows);
 
   return (
     <HStack justify="center" spacing="3rem" align="flex-start">

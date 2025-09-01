@@ -1,13 +1,12 @@
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { type FC, useEffect, useMemo } from 'react';
 import { useChessStore } from '../store/chess.ts';
 import { Button, VStack, Text, HStack, RadioGroup, Image } from '@chakra-ui/react';
 import { AnalyseToolWrapper } from '@/components';
 import playBotsLogo from '/bots.png';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { getBots, passGame } from '@/api/rooms.ts';
+import { useQuery } from '@tanstack/react-query';
+import { getBots } from '@/api/rooms.ts';
 import { usePlayBotsStore } from '@/store/playBots.ts';
 import { useReviewGameStore } from '@/store/reviewGame.ts';
-import { useDialogsStore } from '@/store/dialogs.ts';
 import { useAuthStore } from '@/store/auth.ts';
 import { Link } from 'react-router';
 
@@ -19,9 +18,10 @@ const sideItems = [
 
 type AnalyseToolType = {
   startGame?: (botId: number) => void;
+  pass: () => void;
 };
 
-export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
+export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame, pass }) => {
   const timeline = useChessStore((s) => s.timelineSan);
   const currentPly = useChessStore((s) => s.currentPly);
   const setBotId = usePlayBotsStore((s) => s.setBotId);
@@ -35,17 +35,11 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
     queryFn: getBots,
   });
 
-  const { mutate: mutatePassGame, data: dataPassGame } = useMutation({
-    mutationFn: passGame,
-  });
-
   // управление партией (из стора)
   const phase = useChessStore((s) => s.phase); // 'idle' | 'playing' | 'finished'
-  const resetGame = useChessStore((s) => s.resetGame); // 'idle' | 'playing' | 'finished'
 
   const setPlayer = useChessStore((s) => s.setPlayerSide);
   const roomId = useReviewGameStore((s) => s.id);
-  const setDialogLoseGame = useDialogsStore((s) => s.setDialogLoseGame);
 
   const data = useMemo(() => {
     const rows: Array<{
@@ -71,13 +65,6 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
   }, [timeline]);
 
   useEffect(() => {
-    if (dataPassGame?.success) {
-      resetGame();
-      setDialogLoseGame(true);
-    }
-  }, [dataPassGame]);
-
-  useEffect(() => {
     if (Array.isArray(botsData?.bots) && botId) {
       const bot = botsData?.bots.find((b) => b.id === botId);
       setBotAvatar(bot?.avatar);
@@ -89,7 +76,7 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
     if (accessToken) {
       refetch();
     }
-  }, [accessToken]);
+  }, [accessToken, refetch]);
 
   return (
     <AnalyseToolWrapper title={'Play Bots'} logoSrc={playBotsLogo}>
@@ -186,7 +173,7 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
             })}
           </div>
           {roomId && (
-            <Button bg={'gray'} w={'100%'} onClick={() => mutatePassGame(roomId)}>
+            <Button bg={'gray'} w={'100%'} onClick={pass}>
               Give up
             </Button>
           )}

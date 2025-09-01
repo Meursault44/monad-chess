@@ -94,8 +94,6 @@ export const ProfilePage = () => {
     queryFn: getLeaderboard,
   });
 
-  console.log(expData);
-
   // ——— сводка ———
   const totalXP = expData?.experience?.total ?? 0;
   const xpSubmitted = expData?.experience?.submitted ?? 0;

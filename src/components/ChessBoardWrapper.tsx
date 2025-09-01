@@ -232,7 +232,7 @@ export default function ChessBoardWrapper({
         if (count > 6) clearInterval(id);
       }, 250);
     }
-  }, [findPiece, setBlinkSquares]);
+  }, [findPiece, setBlinkSquares, turn]);
 
   // промо helpers
   function findLegalMove(from: Square, to: Square) {
