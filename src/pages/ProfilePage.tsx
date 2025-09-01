@@ -160,7 +160,7 @@ export const ProfilePage = () => {
 
   return (
     <VStack align="stretch" gap="5" px="6" py="4">
-      <Heading size="lg">Profile</Heading>
+      <Heading color={'white'} size="lg">Profile</Heading>
 
       {/* Summary cards */}
       <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }} gap="4">
