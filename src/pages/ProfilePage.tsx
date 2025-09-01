@@ -28,7 +28,7 @@ import { animate } from 'motion';
 import { getProfilePuzzles, getProfileExperience, getProfileGames } from '@/api/profile';
 import { getLeaderboard } from '@/api/leaderboard';
 
-// ——— утилиты ———
+// ---------- helpers ----------
 const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleString() : '—');
 
 const resultBadge = (r?: string) => {
@@ -37,29 +37,20 @@ const resultBadge = (r?: string) => {
   if (v === '0-1' || v === 'loss' || v === 'l') return <Badge colorPalette="red">Loss</Badge>;
   if (v === '1/2-1/2' || v === 'draw' || v === 'd')
     return <Badge colorPalette="yellow">Draw</Badge>;
-  return <Badge colorPalette="gray">{r ?? '—'}</Badge>;
+  return <Badge>{r ?? '—'}</Badge>;
 };
 
-// ——— маленький враппер с hover-анимацией на motion (Motion One) ———
+// лёгкая hover-анимация (motion one)
 function HoverLift({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement | null>(null);
 
-  const onEnter = () => {
-    if (!ref.current) return;
-    animate(
-      ref.current,
-      { transform: ['translateY(0)', 'translateY(-3px)'] },
-      { duration: 0.25, easing: 'ease-out', fill: 'forwards' },
-    );
-  };
-  const onLeave = () => {
-    if (!ref.current) return;
-    animate(
-      ref.current,
-      { transform: ['translateY(-3px)', 'translateY(0)'] },
-      { duration: 0.25, easing: 'ease-in', fill: 'forwards' },
-    );
-  };
+  const onEnter = () =>
+    ref.current &&
+    animate(ref.current, { transform: ['translateY(0)', 'translateY(-3px)'] }, { duration: 0.22 });
+
+  const onLeave = () =>
+    ref.current &&
+    animate(ref.current, { transform: ['translateY(-3px)', 'translateY(0)'] }, { duration: 0.22 });
 
   return (
     <Box
@@ -94,14 +85,14 @@ export const ProfilePage = () => {
     queryFn: getLeaderboard,
   });
 
-  // ——— сводка ———
+  // -------- summary --------
   const totalXP = expData?.experience?.total ?? 0;
   const xpSubmitted = expData?.experience?.submitted ?? 0;
   const xpUnsubmitted = expData?.experience?.unsubmitted ?? 0;
   const puzzlesSolved = Array.isArray(puzzlesData?.puzzles) ? puzzlesData!.puzzles.length : 0;
   const gamesCount = Array.isArray(gamesData?.games) ? gamesData!.games.length : 0;
 
-  // ——— график XP (кумулятив по submitted=true) ———
+  // -------- XP chart series (submitted only) --------
   const xpSeries = useMemo(() => {
     const recs: Array<{ createdAt: string; amount: number; submitted?: boolean }> =
       expData?.experience?.records ?? [];
@@ -112,16 +103,12 @@ export const ProfilePage = () => {
     let acc = 0;
     return sorted.map((r) => {
       acc += Number(r.amount || 0);
-      return {
-        date: new Date(r.createdAt).toLocaleDateString(),
-        xp: acc,
-      };
+      return { date: new Date(r.createdAt).toLocaleDateString(), xp: acc };
     });
   }, [expData]);
 
   const xpChartData = useMemo(() => {
     if (xpSeries.length === 1) {
-      // Добавим нулевую точку за "вчера", чтобы линия появилась
       const d0 = new Date(xpSeries[0].date);
       const dPrev = new Date(d0.getTime() - 24 * 60 * 60 * 1000);
       return [{ date: dPrev.toLocaleDateString(), xp: 0 }, xpSeries[0]];
@@ -129,7 +116,7 @@ export const ProfilePage = () => {
     return xpSeries;
   }, [xpSeries]);
 
-  // ——— таблица игр ———
+  // -------- tables --------
   const gameRows = useMemo(() => {
     const arr: any[] = Array.isArray(gamesData?.games) ? gamesData!.games : [];
     return arr.map((g) => {
@@ -141,17 +128,10 @@ export const ProfilePage = () => {
       const black = g?.game?.black ?? '—';
       const opponent = (color === 'white' ? black : white) ?? g?.enemy ?? g?.bot ?? '—';
 
-      return {
-        created: fmtDate(createdAt),
-        color,
-        res,
-        reason,
-        opponent,
-      };
+      return { created: fmtDate(createdAt), color, res, reason, opponent };
     });
   }, [gamesData]);
 
-  // ——— таблица пазлов ———
   const puzzleRows = useMemo(() => {
     const arr: any[] = Array.isArray(puzzlesData?.puzzles) ? puzzlesData!.puzzles : [];
     return arr.map((p) => {
@@ -159,16 +139,10 @@ export const ProfilePage = () => {
       const lichess = p?.puzzle?.lichessId ?? '—';
       const themes: string[] = p?.puzzle?.themes ?? [];
       const created = fmtDate(p?.createdAt);
-      return {
-        rating,
-        lichess,
-        created,
-        themes,
-      };
+      return { rating, lichess, created, themes };
     });
   }, [puzzlesData]);
 
-  // ——— таблица лидерборда ———
   const leaderboard = useMemo(() => {
     const arr: any[] = Array.isArray(lbData?.leaderboard) ? lbData!.leaderboard : [];
     return arr
@@ -186,94 +160,64 @@ export const ProfilePage = () => {
 
   return (
     <VStack align="stretch" gap="5" px="6" py="4">
-      <Heading size="lg" color="white">
-        Profile
-      </Heading>
+      <Heading size="lg">Profile</Heading>
 
-      {/* Сводные карточки */}
+      {/* Summary cards */}
       <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }} gap="4">
-        <HoverLift>
-          <Card.Root>
-            <Card.Header>
-              <Stat.Root>
-                <Stat.Label>Total XP</Stat.Label>
-                <Stat.ValueText>{totalXP}</Stat.ValueText>
-                <Stat.HelpText>
-                  Submitted: {xpSubmitted} • Pending: {xpUnsubmitted}
-                </Stat.HelpText>
-              </Stat.Root>
-            </Card.Header>
-          </Card.Root>
-        </HoverLift>
-
-        <HoverLift>
-          <Card.Root>
-            <Card.Header>
-              <Stat.Root>
-                <Stat.Label>Puzzles Solved</Stat.Label>
-                <Stat.ValueText>{puzzlesSolved}</Stat.ValueText>
-                <Stat.HelpText>Across all ratings</Stat.HelpText>
-              </Stat.Root>
-            </Card.Header>
-          </Card.Root>
-        </HoverLift>
-
-        <HoverLift>
-          <Card.Root>
-            <Card.Header>
-              <Stat.Root>
-                <Stat.Label>Games Played</Stat.Label>
-                <Stat.ValueText>{gamesCount}</Stat.ValueText>
-                <Stat.HelpText>Vs bots & players</Stat.HelpText>
-              </Stat.Root>
-            </Card.Header>
-          </Card.Root>
-        </HoverLift>
-
-        <HoverLift>
-          <Card.Root>
-            <Card.Header>
-              <Stat.Root>
-                <Stat.Label>Leaderboard Size</Stat.Label>
-                <Stat.ValueText>{leaderboard.length}</Stat.ValueText>
-                <Stat.HelpText>Monad Games ID</Stat.HelpText>
-              </Stat.Root>
-            </Card.Header>
-          </Card.Root>
-        </HoverLift>
+        {[
+          {
+            label: 'Total XP',
+            value: totalXP,
+            help: `Submitted: ${xpSubmitted} • Pending: ${xpUnsubmitted}`,
+          },
+          { label: 'Puzzles Solved', value: puzzlesSolved, help: 'Across all ratings' },
+          { label: 'Games Played', value: gamesCount, help: 'Vs bots & players' },
+          { label: 'Leaderboard Size', value: leaderboard.length, help: 'Monad Games ID' },
+        ].map((c) => (
+          <HoverLift key={c.label}>
+            <Card.Root>
+              <Card.Header>
+                <Stat.Root>
+                  <Stat.Label>{c.label}</Stat.Label>
+                  <Stat.ValueText fontSize="2xl">{c.value}</Stat.ValueText>
+                  <Stat.HelpText>{c.help}</Stat.HelpText>
+                </Stat.Root>
+              </Card.Header>
+            </Card.Root>
+          </HoverLift>
+        ))}
       </Grid>
 
-      {/* График XP */}
-      <Card.Root>
+      {/* XP chart */}
+      <Card.Root background={'#1a1b1f'}>
         <Card.Header pb="0">
           <HStack justify="space-between">
             <Heading size="md">XP Progress</Heading>
-            <Text color="gray.500" fontSize="sm">
-              Cumulative (submitted records)
-            </Text>
+            <Text fontSize="sm">Cumulative (submitted records)</Text>
           </HStack>
         </Card.Header>
-
-        {/* ВАЖНО: minW="0" + явный бокс с высотой */}
-        <Card.Body pt="4" minW="0">
+        <Card.Body pt="4">
           {xpChartData.length === 0 ? (
-            <Box as="p" color="gray.500">
-              No XP records yet.
-            </Box>
+            <Text>No XP records yet.</Text>
           ) : (
             <Box w="100%" h="280px" minW="0">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={xpChartData} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" minTickGap={12} interval="preserveStartEnd" />
-                  <YAxis allowDecimals={false} />
+                  <CartesianGrid />
+                  <XAxis
+                    dataKey="date"
+                    minTickGap={12}
+                    interval="preserveStartEnd"
+                    tick={{ fill: 'currentColor', fontSize: 12 }}
+                  />
+                  <YAxis allowDecimals={false} tick={{ fill: 'currentColor', fontSize: 12 }} />
                   <ReTooltip />
                   <Line
                     type="monotone"
                     dataKey="xp"
                     stroke="#836ef9"
                     strokeWidth={2}
-                    dot
+                    dot={{ r: 3 }}
                     isAnimationActive={false}
                   />
                 </LineChart>
@@ -284,19 +228,17 @@ export const ProfilePage = () => {
       </Card.Root>
 
       <Grid templateColumns={{ base: '1fr', xl: '1.3fr 0.7fr' }} gap="5">
-        {/* История игр */}
-        <Card.Root>
+        {/* Games */}
+        <Card.Root background={'#1a1b1f'}>
           <Card.Header>
             <Heading size="md">Game History</Heading>
           </Card.Header>
-
-          {/* фиксированная область со скроллом */}
           <Card.Body minW="0" pt="0">
             <Box h="420px" overflowY="auto">
               <Table.Root size="sm" variant="line" stickyHeader tableLayout="fixed" w="full">
                 <Table.Header>
                   <Table.Row>
-                    <Table.ColumnHeader w="150px">Date</Table.ColumnHeader>
+                    <Table.ColumnHeader w="160px">Date</Table.ColumnHeader>
                     <Table.ColumnHeader w="90px">Color</Table.ColumnHeader>
                     <Table.ColumnHeader w="110px">Result</Table.ColumnHeader>
                     <Table.ColumnHeader>Opponent</Table.ColumnHeader>
@@ -305,21 +247,21 @@ export const ProfilePage = () => {
                 </Table.Header>
                 <Table.Body>
                   {gameRows.length === 0 ? (
-                      <Table.Row>
-                        <Table.Cell colSpan={5}>
-                          <Text color="gray.500">No games yet.</Text>
-                        </Table.Cell>
-                      </Table.Row>
+                    <Table.Row>
+                      <Table.Cell colSpan={5}>
+                        <Text>No games yet.</Text>
+                      </Table.Cell>
+                    </Table.Row>
                   ) : (
-                      gameRows.map((g, idx) => (
-                          <Table.Row key={idx}>
-                            <Table.Cell>{g.created}</Table.Cell>
-                            <Table.Cell textTransform="capitalize">{g.color}</Table.Cell>
-                            <Table.Cell>{resultBadge(g.res)}</Table.Cell>
-                            <Table.Cell>{g.opponent}</Table.Cell>
-                            <Table.Cell>{g.reason}</Table.Cell>
-                          </Table.Row>
-                      ))
+                    gameRows.map((g, idx) => (
+                      <Table.Row key={idx}>
+                        <Table.Cell>{g.created}</Table.Cell>
+                        <Table.Cell textTransform="capitalize">{g.color}</Table.Cell>
+                        <Table.Cell>{resultBadge(g.res)}</Table.Cell>
+                        <Table.Cell>{g.opponent}</Table.Cell>
+                        <Table.Cell>{g.reason}</Table.Cell>
+                      </Table.Row>
+                    ))
                   )}
                 </Table.Body>
               </Table.Root>
@@ -327,8 +269,8 @@ export const ProfilePage = () => {
           </Card.Body>
         </Card.Root>
 
-        {/* Лидерборд */}
-        <Card.Root>
+        {/* Leaderboard */}
+        <Card.Root background={'#1a1b1f'}>
           <Card.Header>
             <Heading size="md">Leaderboard (Monad Games ID)</Heading>
           </Card.Header>
@@ -347,7 +289,7 @@ export const ProfilePage = () => {
                 {leaderboard.length === 0 ? (
                   <Table.Row>
                     <Table.Cell colSpan={3}>
-                      <Text color="gray.500">No leaderboard data.</Text>
+                      <Text>No leaderboard data.</Text>
                     </Table.Cell>
                   </Table.Row>
                 ) : (
@@ -365,8 +307,8 @@ export const ProfilePage = () => {
         </Card.Root>
       </Grid>
 
-      {/* Пазлы */}
-      <Card.Root>
+      {/* Puzzles */}
+      <Card.Root background={'#1a1b1f'}>
         <Card.Header>
           <Heading size="md">Puzzles Solved</Heading>
         </Card.Header>
@@ -374,7 +316,7 @@ export const ProfilePage = () => {
           <Table.Root size="sm" variant="line" stickyHeader>
             <Table.Header>
               <Table.Row>
-                <Table.ColumnHeader w="150px">Date</Table.ColumnHeader>
+                <Table.ColumnHeader w="160px">Date</Table.ColumnHeader>
                 <Table.ColumnHeader w="120px">Rating</Table.ColumnHeader>
                 <Table.ColumnHeader w="140px">Lichess ID</Table.ColumnHeader>
                 <Table.ColumnHeader>Themes</Table.ColumnHeader>
@@ -384,7 +326,7 @@ export const ProfilePage = () => {
               {puzzleRows.length === 0 ? (
                 <Table.Row>
                   <Table.Cell colSpan={4}>
-                    <Text color="gray.500">No puzzles solved yet.</Text>
+                    <Text>No puzzles solved yet.</Text>
                   </Table.Cell>
                 </Table.Row>
               ) : (
@@ -413,9 +355,7 @@ export const ProfilePage = () => {
       {loading && (
         <>
           <Separator />
-          <Text color="gray.500" fontSize="sm">
-            Loading latest profile data…
-          </Text>
+          <Text fontSize="sm">Loading latest profile data…</Text>
         </>
       )}
     </VStack>

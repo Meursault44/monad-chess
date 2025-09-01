@@ -39,6 +39,7 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame, pass }
   const phase = useChessStore((s) => s.phase); // 'idle' | 'playing' | 'finished'
 
   const setPlayer = useChessStore((s) => s.setPlayerSide);
+  const playerSide = useChessStore((s) => s.playerSide);
   const roomId = useReviewGameStore((s) => s.id);
 
   const data = useMemo(() => {
@@ -104,7 +105,6 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame, pass }
           <VStack align="stretch" p="10px" w={'100%'}>
             {/* ✅ Новый Radio API из Chakra v3 */}
             <RadioGroup.Root
-              disabled={phase === 'playing'}
               onValueChange={(e) => {
                 const v = e.value as 'w' | 'b' | null;
                 setPlayer(v);
