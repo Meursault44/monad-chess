@@ -190,12 +190,12 @@ export const ReviewGamePage = () => {
   // подписи игроков в заголовках
   const whiteLabel = useMemo(() => {
     const name = (data as any)?.game?.white ?? 'White';
-    return `Белые — ${name}`;
+    return `White — ${name}`;
   }, [data]);
 
   const blackLabel = useMemo(() => {
     const name = (data as any)?.game?.black ?? 'Black';
-    return `Чёрные — ${name}`;
+    return `Black — ${name}`;
   }, [data]);
 
   // кто ходит первым (по fenBefore первого полухода)

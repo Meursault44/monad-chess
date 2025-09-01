@@ -289,37 +289,41 @@ export const ProfilePage = () => {
           <Card.Header>
             <Heading size="md">Game History</Heading>
           </Card.Header>
-          <Card.Body>
-            <Table.Root size="sm" variant="line" stickyHeader>
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeader w="150px">Date</Table.ColumnHeader>
-                  <Table.ColumnHeader w="90px">Color</Table.ColumnHeader>
-                  <Table.ColumnHeader w="110px">Result</Table.ColumnHeader>
-                  <Table.ColumnHeader>Opponent</Table.ColumnHeader>
-                  <Table.ColumnHeader>Reason</Table.ColumnHeader>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {gameRows.length === 0 ? (
+
+          {/* фиксированная область со скроллом */}
+          <Card.Body minW="0" pt="0">
+            <Box h="420px" overflowY="auto">
+              <Table.Root size="sm" variant="line" stickyHeader tableLayout="fixed" w="full">
+                <Table.Header>
                   <Table.Row>
-                    <Table.Cell colSpan={5}>
-                      <Text color="gray.500">No games yet.</Text>
-                    </Table.Cell>
+                    <Table.ColumnHeader w="150px">Date</Table.ColumnHeader>
+                    <Table.ColumnHeader w="90px">Color</Table.ColumnHeader>
+                    <Table.ColumnHeader w="110px">Result</Table.ColumnHeader>
+                    <Table.ColumnHeader>Opponent</Table.ColumnHeader>
+                    <Table.ColumnHeader>Reason</Table.ColumnHeader>
                   </Table.Row>
-                ) : (
-                  gameRows.map((g, idx) => (
-                    <Table.Row key={idx}>
-                      <Table.Cell>{g.created}</Table.Cell>
-                      <Table.Cell textTransform="capitalize">{g.color}</Table.Cell>
-                      <Table.Cell>{resultBadge(g.res)}</Table.Cell>
-                      <Table.Cell>{g.opponent}</Table.Cell>
-                      <Table.Cell>{g.reason}</Table.Cell>
-                    </Table.Row>
-                  ))
-                )}
-              </Table.Body>
-            </Table.Root>
+                </Table.Header>
+                <Table.Body>
+                  {gameRows.length === 0 ? (
+                      <Table.Row>
+                        <Table.Cell colSpan={5}>
+                          <Text color="gray.500">No games yet.</Text>
+                        </Table.Cell>
+                      </Table.Row>
+                  ) : (
+                      gameRows.map((g, idx) => (
+                          <Table.Row key={idx}>
+                            <Table.Cell>{g.created}</Table.Cell>
+                            <Table.Cell textTransform="capitalize">{g.color}</Table.Cell>
+                            <Table.Cell>{resultBadge(g.res)}</Table.Cell>
+                            <Table.Cell>{g.opponent}</Table.Cell>
+                            <Table.Cell>{g.reason}</Table.Cell>
+                          </Table.Row>
+                      ))
+                  )}
+                </Table.Body>
+              </Table.Root>
+            </Box>
           </Card.Body>
         </Card.Root>
 
