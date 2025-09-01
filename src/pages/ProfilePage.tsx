@@ -24,6 +24,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { animate } from 'motion';
+import { useNavigate } from 'react-router';
 
 import { getProfilePuzzles, getProfileExperience, getProfileGames } from '@/api/profile';
 import { getLeaderboard } from '@/api/leaderboard';
@@ -85,6 +86,8 @@ export const ProfilePage = () => {
     queryFn: getLeaderboard,
   });
 
+  const navigate = useNavigate();
+
   // -------- summary --------
   const totalXP = expData?.experience?.total ?? 0;
   const xpSubmitted = expData?.experience?.submitted ?? 0;
@@ -127,8 +130,9 @@ export const ProfilePage = () => {
       const white = g?.game?.white ?? '—';
       const black = g?.game?.black ?? '—';
       const opponent = (color === 'white' ? black : white) ?? g?.enemy ?? g?.bot ?? '—';
+      const code = g?.game?.room?.code;
 
-      return { created: fmtDate(createdAt), color, res, reason, opponent };
+      return { created: fmtDate(createdAt), color, res, reason, opponent, code };
     });
   }, [gamesData]);
 
@@ -160,7 +164,9 @@ export const ProfilePage = () => {
 
   return (
     <VStack align="stretch" gap="5" px="6" py="4">
-      <Heading color={'white'} size="lg">Profile</Heading>
+      <Heading color={'white'} size="lg">
+        Profile
+      </Heading>
 
       {/* Summary cards */}
       <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)', xl: 'repeat(4, 1fr)' }} gap="4">
@@ -254,7 +260,11 @@ export const ProfilePage = () => {
                     </Table.Row>
                   ) : (
                     gameRows.map((g, idx) => (
-                      <Table.Row key={idx}>
+                      <Table.Row
+                        key={idx}
+                        onClick={() => navigate(`/play/computer/review/${g?.code}`)}
+                        _hover={{ cursor: 'pointer' }}
+                      >
                         <Table.Cell>{g.created}</Table.Cell>
                         <Table.Cell textTransform="capitalize">{g.color}</Table.Cell>
                         <Table.Cell>{resultBadge(g.res)}</Table.Cell>

@@ -21,6 +21,10 @@ const config = defineConfig({
 
         textMain: { value: '#ffffff' },
         textMuted: { value: 'rgba(255,255,255,0.72)' },
+
+        scrollbarThumb: { value: 'rgba(255,255,255,0.28)' },
+        scrollbarThumbHover: { value: 'rgba(255,255,255,0.42)' },
+        scrollbarTrack: { value: 'transparent' },
       },
       radii: {
         card: { value: '12px' },
@@ -61,10 +65,9 @@ const config = defineConfig({
         base: {
           root: { color: '{colors.textMain}' },
           header: { bg: '{colors.cardHeaderBg}' },
-          row: { _hover: { bg: '{colors.tableRowHover}' } },
+          row: { background: '{colors.cardBg}', _hover: { bg: '{colors.cardHoverBg}' } },
           cell: {
             color: '{colors.textMain}',
-            bg: '{colors.cardBg}',
             borderColor: '{colors.tableBorderSoft}',
           },
           columnHeader: {
@@ -76,6 +79,11 @@ const config = defineConfig({
         variants: {
           variant: {
             line: {
+              // ← перенесли сюда
+              row: {
+                bg: '{colors.cardBg}',
+                _hover: { bg: '{colors.cardHoverBg}' },
+              },
               cell: { borderBottomWidth: '1px', borderColor: '{colors.tableBorderSoft}' },
               columnHeader: { borderBottomWidth: '1px', borderColor: '{colors.tableBorderSoft}' },
             },
@@ -106,6 +114,32 @@ const config = defineConfig({
     'html, body': {
       fontFamily: "'Open Sans', system-ui, sans-serif",
       backgroundColor: '{colors.appBg}',
+    },
+    /* === Firefox === */
+    '*, *::before, *::after': {
+      scrollbarWidth: 'thin',
+      scrollbarColor: '{colors.scrollbarThumb} {colors.scrollbarTrack}',
+    },
+
+    /* === WebKit (Chrome/Edge/Safari) === */
+    '::-webkit-scrollbar': {
+      width: '10px',
+      height: '10px',
+    },
+    '::-webkit-scrollbar-thumb': {
+      backgroundColor: '{colors.scrollbarThumb}',
+      borderRadius: '8px',
+      border: '2px solid transparent', // даёт «пэддинг» внутри
+      backgroundClip: 'content-box', // убирает «залипание» к краям
+    },
+    '::-webkit-scrollbar-thumb:hover': {
+      backgroundColor: '{colors.scrollbarThumbHover}',
+    },
+    '::-webkit-scrollbar-track': {
+      backgroundColor: '{colors.scrollbarTrack}',
+    },
+    '::-webkit-scrollbar-corner': {
+      background: 'transparent',
     },
   },
 });

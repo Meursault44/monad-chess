@@ -12,10 +12,9 @@ export const AnalyseToolWrapper: FC<AnalyseToolWrapperType> = ({ logoSrc, title,
     <VStack
       my={'auto'}
       h={'90vh'}
-      w={'360px'}
+      w={'380px'}
       border={'2px white solid'}
       borderRadius={'10px'}
-      gap={'30px'}
       position={'relative'}
       bg={'#17171A'}
     >
@@ -25,6 +24,7 @@ export const AnalyseToolWrapper: FC<AnalyseToolWrapperType> = ({ logoSrc, title,
         height={'80px'}
         justify={'center'}
         padding={'10px 40px'}
+        flexShrink={0}
       >
         <Image src={logoSrc} alt="" width={'40px'} />
         <Heading color={'white'} fontSize={'24px'}>

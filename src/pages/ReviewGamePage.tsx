@@ -7,9 +7,10 @@ import { AnalyseToolWrapper, PlayerRow, Assistant } from '@/components';
 import ChessBoardWrapper from '@/components/ChessBoardWrapper.tsx';
 import { useChessStore } from '@/store/chess';
 import type { AnalysesType } from '@/store/reviewGame.ts';
-import { Image } from '@chakra-ui/react';
+import { Image, VStack } from '@chakra-ui/react';
 import { wP, bP, wN, bN, wB, bB, wK, bK, wR, bR, bQ, wQ } from '@/assets/pieces';
 import type { PieceSymbol } from 'chess.js';
+import { QualityBadge, type Severity } from '@/components/QualityBadge';
 
 const piecesSrc = {
   b: {
@@ -42,7 +43,6 @@ import { Box, Button, HStack, Table, Text } from '@chakra-ui/react';
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 type Promo = 'q' | 'r' | 'b' | 'n';
-type Severity = 'great' | 'blunder' | 'mistake' | 'inaccuracy' | 'brilliant';
 
 // цвета токенов для «бейдж-иконок»
 const severityColor: Record<Severity, string> = {
@@ -51,15 +51,6 @@ const severityColor: Record<Severity, string> = {
   inaccuracy: 'yellow.500',
   mistake: 'orange.500',
   blunder: 'red.500',
-};
-
-// символы, стилистически близкие к chess.com
-const severityIcon: Record<Severity, string> = {
-  brilliant: '◆', // можно заменить на SVG-бриллиант
-  great: '✓',
-  inaccuracy: '!',
-  mistake: '?',
-  blunder: '??',
 };
 
 // UCI вида e2e4, e7e8q
@@ -109,55 +100,53 @@ function applySmart(applyMove: (arg: any) => { san: string } | null, move: strin
 }
 
 // ячейка хода со «значком качества» СЛЕВА от текста, как на chess.com
-function MoveCell(props: {
+function MoveCell({
+  label,
+  severity,
+  onClick,
+  active,
+  piece,
+  isPawn,
+}: {
   label?: string;
   severity?: Severity;
   onClick?: () => void;
   active?: boolean;
   piece?: string;
+  isPawn?: boolean;
 }) {
-  const { label, severity, onClick, active, piece } = props;
-
   if (!label) return <Text color="gray.400">—</Text>;
-
-  const icon = severity ? severityIcon[severity] : null;
-  const bg = severity ? severityColor[severity] : undefined;
 
   return (
     <HStack
-      spacing="2"
+      gap="0.4rem"
       cursor="pointer"
       onClick={onClick}
-      bg={active ? 'rgba(131, 110, 249, 0.7)' : 'transparent'}
+      bg={active ? 'rgba(131,110,249,0.7)' : 'transparent'}
       borderRadius="md"
       px="1.5"
       py="0.5"
       transition="background 0.15s"
-      _hover={{ bg: active ? 'rgba(131, 110, 249, 0.7)' : 'rgba(131, 110, 249, 0.4)' }}
+      _hover={{ bg: active ? 'rgba(131,110,249,0.7)' : 'rgba(131,110,249,0.4)' }}
       align="center"
     >
-      {/* маленький круглый маркер слева */}
-      {icon && (
-        <Box
-          w="18px"
-          h="18px"
-          borderRadius="full"
-          bg={bg}
-          color="white"
-          fontSize="xs"
-          lineHeight="18px"
-          textAlign="center"
-          fontWeight="bold"
-          userSelect="none"
-          flexShrink={0}
-        >
-          {icon}
+      {severity && (
+        <Box w="24px" h="24px" flexShrink={0}>
+          <QualityBadge severity={severity} />
         </Box>
       )}
 
-      {/* текст хода */}
-      {piece && <Image src={piece} alt="piece" boxSize="50px" objectFit="contain" />}
-      <Text fontWeight="medium">{label}</Text>
+      {piece && (
+        <Image src={piece} alt="piece" boxSize={isPawn ? '40px' : '50px'} objectFit="contain" />
+      )}
+
+      {/* цвет текста можно оставить прежним */}
+      <Text
+        fontWeight="medium"
+        color={!severity || severity === 'great' ? 'white' : severityColor[severity!]}
+      >
+        {label}
+      </Text>
     </HStack>
   );
 }
@@ -190,12 +179,12 @@ export const ReviewGamePage = () => {
   // подписи игроков в заголовках
   const whiteLabel = useMemo(() => {
     const name = (data as any)?.game?.white ?? 'White';
-    return `White — ${name}`;
+    return `White - ${name}`;
   }, [data]);
 
   const blackLabel = useMemo(() => {
     const name = (data as any)?.game?.black ?? 'Black';
-    return `Black — ${name}`;
+    return `Black - ${name}`;
   }, [data]);
 
   // кто ходит первым (по fenBefore первого полухода)
@@ -221,7 +210,7 @@ export const ReviewGamePage = () => {
     }
 
     hydratedRef.current = true;
-    goToPly(0);
+    goToPly(analyses.length > 0 ? 1 : 0);
     return () => {
       resetGame();
     };
@@ -239,6 +228,8 @@ export const ReviewGamePage = () => {
       bPly?: number;
       wPiece?: string;
       bPiece?: string;
+      wIsPawn?: boolean;
+      bIsPawn?: boolean;
     };
 
     const res: Row[] = [];
@@ -259,6 +250,8 @@ export const ReviewGamePage = () => {
         bPly: b ? blackIdx + 1 : undefined,
         wPiece: getPieceSrc(w?.side, w?.piece),
         bPiece: getPieceSrc(b?.side, b?.piece),
+        wIsPawn: w?.piece === 'p',
+        bIsPawn: b?.piece === 'p',
       });
     }
     return res;
@@ -289,86 +282,94 @@ export const ReviewGamePage = () => {
     <HStack justify="center" gap="3rem" align="flex-start">
       {/* Левая колонка: доска + навигация */}
       <Box display="flex" flexDir="column">
-        <PlayerRow />
+        <PlayerRow
+          m={'0 0 10px 0'}
+          src={data?.room?.bot?.avatar}
+          name={data?.room?.bot?.name || 'Bot'}
+        />
         <ChessBoardWrapper />
-        <PlayerRow />
+        <PlayerRow m={'10px 0 0 0'} name={data?.room?.name || 'You'} />
       </Box>
 
       {/* Правая колонка: таблица анализа */}
       <AnalyseToolWrapper title="Analysis" logoSrc="/bots.png">
-        <Assistant message={analyses?.[currentPly - 1]?.llmShort} minHeight={'100px'} />
-        <Box maxH="70vh" overflowY="auto">
-          <Table.Root size="sm" variant="line" stickyHeader tableLayout="fixed">
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeader w="56px" minW="56px" maxW="56px" textAlign="center">
-                  №
-                </Table.ColumnHeader>
-                <Table.ColumnHeader>{whiteLabel}</Table.ColumnHeader>
-                <Table.ColumnHeader>{blackLabel}</Table.ColumnHeader>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {rows.map((r) => (
-                <Table.Row key={r.num}>
-                  <Table.Cell
-                    w="56px"
-                    minW="56px"
-                    maxW="56px"
-                    textAlign="center"
-                    fontWeight="semibold"
-                  >
-                    {r.num}
-                  </Table.Cell>
-
-                  <Table.Cell>
-                    <MoveCell
-                      label={r.wLabel}
-                      severity={r.wSeverity}
-                      onClick={() => r.wPly && goToPly(r.wPly)}
-                      active={r.wPly === currentPly}
-                      piece={r.wPiece}
-                    />
-                  </Table.Cell>
-
-                  <Table.Cell>
-                    <MoveCell
-                      label={r.bLabel}
-                      severity={r.bSeverity}
-                      onClick={() => r.bPly && goToPly(r.bPly)}
-                      active={r.bPly === currentPly}
-                      piece={r.bPiece}
-                    />
-                  </Table.Cell>
+        <VStack h={'100%'} overflow={'hidden'} gap={'1.5rem'} p={'1.5rem 0'}>
+          <Assistant message={analyses?.[currentPly - 1]?.llmShort} minHeight={'100px'} />
+          <Box maxH="70vh" overflowY="auto">
+            <Table.Root size="sm" variant="line" stickyHeader tableLayout="fixed">
+              <Table.Header>
+                <Table.Row>
+                  <Table.ColumnHeader w="56px" minW="56px" maxW="56px" textAlign="center">
+                    №
+                  </Table.ColumnHeader>
+                  <Table.ColumnHeader>{whiteLabel}</Table.ColumnHeader>
+                  <Table.ColumnHeader>{blackLabel}</Table.ColumnHeader>
                 </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
-        </Box>
-        <HStack w={'100%'} justifyContent={'center'}>
-          <Button
-            bg={'#25232C'}
-            _hover={{
-              backgroundColor: '#4F4372',
-            }}
-            w={'40%'}
-            onClick={() => goToPly(Math.max(0, currentPly - 1))}
-            isDisabled={!canPrev}
-          >
-            ← Prev
-          </Button>
-          <Button
-            bg={'#25232C'}
-            w={'40%'}
-            _hover={{
-              backgroundColor: '#4F4372',
-            }}
-            onClick={() => goToPly(Math.min(totalPly, currentPly + 1))}
-            isDisabled={!canNext}
-          >
-            Next →
-          </Button>
-        </HStack>
+              </Table.Header>
+              <Table.Body>
+                {rows.map((r) => (
+                  <Table.Row key={r.num}>
+                    <Table.Cell
+                      w="56px"
+                      minW="56px"
+                      maxW="56px"
+                      textAlign="center"
+                      fontWeight="semibold"
+                    >
+                      {r.num}
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <MoveCell
+                        label={r.wLabel}
+                        severity={r.wSeverity}
+                        onClick={() => r.wPly && goToPly(r.wPly)}
+                        active={r.wPly === currentPly}
+                        piece={r.wPiece}
+                        isPawn={r.wIsPawn}
+                      />
+                    </Table.Cell>
+
+                    <Table.Cell>
+                      <MoveCell
+                        label={r.bLabel}
+                        severity={r.bSeverity}
+                        onClick={() => r.bPly && goToPly(r.bPly)}
+                        active={r.bPly === currentPly}
+                        piece={r.bPiece}
+                        isPawn={r.bIsPawn}
+                      />
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Root>
+          </Box>
+          <HStack w={'100%'} justifyContent={'center'}>
+            <Button
+              bg={'#25232C'}
+              _hover={{
+                backgroundColor: '#4F4372',
+              }}
+              w={'40%'}
+              onClick={() => goToPly(Math.max(0, currentPly - 1))}
+              isDisabled={!canPrev}
+            >
+              ← Prev
+            </Button>
+            <Button
+              bg={'#25232C'}
+              w={'40%'}
+              _hover={{
+                backgroundColor: '#4F4372',
+              }}
+              onClick={() => goToPly(Math.min(totalPly, currentPly + 1))}
+              isDisabled={!canNext}
+            >
+              Next →
+            </Button>
+          </HStack>
+        </VStack>
       </AnalyseToolWrapper>
     </HStack>
   );

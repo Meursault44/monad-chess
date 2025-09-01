@@ -1,7 +1,7 @@
 import { type FC, useEffect, useMemo } from 'react';
 import { useChessStore } from '../store/chess.ts';
 import { Button, VStack, Text, HStack, RadioGroup, Image } from '@chakra-ui/react';
-import { AnalyseToolWrapper } from '@/components';
+import { AnalyseToolWrapper, PlayAsPicker } from '@/components';
 import playBotsLogo from '/bots.png';
 import { useQuery } from '@tanstack/react-query';
 import { getBots } from '@/api/rooms.ts';
@@ -9,6 +9,7 @@ import { usePlayBotsStore } from '@/store/playBots.ts';
 import { useReviewGameStore } from '@/store/reviewGame.ts';
 import { useAuthStore } from '@/store/auth.ts';
 import { Link } from 'react-router';
+import { MovesTablePlain } from '@/components/MovesTablePlain.tsx';
 
 const sideItems = [
   { label: 'White', value: 'w' as const },
@@ -28,6 +29,7 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame, pass }
   const botId = usePlayBotsStore((s) => s.botId);
   const setBotAvatar = usePlayBotsStore((s) => s.setBotAvatar);
   const setBotName = usePlayBotsStore((s) => s.setBotName);
+  const botName = usePlayBotsStore((s) => s.botName);
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const { data: botsData, refetch } = useQuery({
@@ -81,104 +83,102 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame, pass }
 
   return (
     <AnalyseToolWrapper title={'Play Bots'} logoSrc={playBotsLogo}>
-      {phase === 'idle' && (
-        <>
-          <VStack w={'100%'} p={'10px'} overflowY={'scroll'} h={'400px'}>
-            {botsData?.bots?.map((bot) => (
-              <HStack
-                key={bot.id}
-                cursor={'pointer'}
-                onClick={() => setBotId(bot.id)}
-                bg={botId === bot.id ? 'rgba(131, 110, 249, 0.5)' : 'rgba(255, 255, 255, .3)'}
-                p={'6px'}
-                borderRadius={'10px'}
-                boxSizing={'border-box'}
-                w={'100%'}
-                color={'white'}
-                boxShadow={'4 6 10 rgba(0,0,0, 1)'}
-              >
-                <Image src={bot.avatar} width={'50px'}></Image>
-                {bot.name}
-              </HStack>
-            ))}
-          </VStack>
-          <VStack align="stretch" p="10px" w={'100%'}>
-            {/* ✅ Новый Radio API из Chakra v3 */}
-            <RadioGroup.Root
-              onValueChange={(e) => {
-                const v = e.value as 'w' | 'b' | null;
-                setPlayer(v);
-              }}
-            >
-              <HStack gap="3">
-                {sideItems.map((item) => (
-                  <RadioGroup.Item key={item.value} value={item.value}>
-                    <RadioGroup.ItemHiddenInput />
-                    <RadioGroup.ItemIndicator />
-                    <RadioGroup.ItemText color={'white'}>{item.label}</RadioGroup.ItemText>
-                  </RadioGroup.Item>
-                ))}
-              </HStack>
-            </RadioGroup.Root>
-
-            <Button
-              size="sm"
-              colorScheme="purple"
-              onClick={() => {
-                startGame?.(botId);
-              }}
-              bg={'gray'}
-              w={'100%'}
-            >
-              Start game
-            </Button>
-            {roomId && (
-              <Button bg={'gray'} w={'100%'} p={0}>
-                <Link
-                  className={'flex h-full w-full items-center justify-center'}
-                  to={`/play/computer/review/${roomId}`}
+      <VStack w={'100%'} h={'100%'} p={'10px'}>
+        {phase === 'idle' && (
+          <>
+            <VStack w={'100%'} overflowY={'scroll'} h={'100%'}>
+              {botsData?.bots?.map((bot) => (
+                <HStack
+                  key={bot.id}
+                  cursor={'pointer'}
+                  onClick={() => setBotId(bot.id)}
+                  bg={botId === bot.id ? 'rgba(131, 110, 249, 0.5)' : 'rgba(255, 255, 255, .3)'}
+                  p={'6px'}
+                  borderRadius={'10px'}
+                  boxSizing={'border-box'}
+                  w={'100%'}
+                  color={'white'}
+                  boxShadow={'4 6 10 rgba(0,0,0, 1)'}
                 >
-                  Game Analysis
-                </Link>
+                  <Image src={bot.avatar} width={'50px'}></Image>
+                  {bot.name}
+                </HStack>
+              ))}
+            </VStack>
+            <VStack align="stretch" p="10px" w={'100%'} height={roomId ? '430px' : '310px'}>
+              <PlayAsPicker
+                value={playerSide} // 'w' | 'b' | null из стора
+                onChange={setPlayer} // просто пишем в zustand
+              />
+              <VStack justifyContent={'center'}>
+                <Button
+                  size="sm"
+                  colorScheme="purple"
+                  onClick={() => {
+                    startGame?.(botId);
+                  }}
+                  bg={'#25232C'}
+                  _hover={{
+                    backgroundColor: '#4F4372',
+                  }}
+                  h={'50px'}
+                  mx={'10px'}
+                  fontSize={'18px'}
+                  w={'100%'}
+                >
+                  Start game
+                </Button>
+                {roomId && (
+                  <Button
+                    bg={'#25232C'}
+                    _hover={{
+                      backgroundColor: '#4F4372',
+                    }}
+                    h={'50px'}
+                    mx={'10px'}
+                    fontSize={'18px'}
+                    w={'100%'}
+                    p={0}
+                  >
+                    <Link
+                      className={'flex h-full w-full items-center justify-center'}
+                      to={`/play/computer/review/${roomId}`}
+                    >
+                      Game Analysis
+                    </Link>
+                  </Button>
+                )}
+              </VStack>
+            </VStack>
+          </>
+        )}
+
+        {/* Список ходов */}
+        {phase === 'playing' && (
+          <VStack width={'100%'} height={'100%'} p={'20px 0'}>
+            <MovesTablePlain
+              rows={data}
+              whiteLabel={playerSide === 'w' ? 'You' : botName}
+              blackLabel={playerSide === 'b' ? 'You' : botName}
+            />
+            {roomId && (
+              <Button
+                bg={'#25232C'}
+                _hover={{
+                  backgroundColor: '#4F4372',
+                }}
+                h={'50px'}
+                mx={'10px'}
+                fontSize={'18px'}
+                w={'100%'}
+                onClick={pass}
+              >
+                Give up
               </Button>
             )}
           </VStack>
-        </>
-      )}
-
-      {/* Список ходов */}
-      {phase === 'playing' && (
-        <VStack>
-          <div className="flex h-[520px] w-full flex-col overflow-y-auto">
-            {data.map((i) => {
-              const whiteActive = currentPly === i.whitePly;
-              const blackActive = currentPly === i.blackPly;
-              return (
-                <div key={i.key} className="flex w-full gap-5">
-                  <div className="flex w-[30px] shrink-0 grow-0 basis-[13%] justify-center bg-[#5B3F7C] text-[#E8DABD]">
-                    {i.move}
-                  </div>
-                  <div
-                    className={`cursor-pointer text-white ${whiteActive ? 'bg-amber-500' : ''} w-[40px] text-center`}
-                  >
-                    {i.wMove}
-                  </div>
-                  <div
-                    className={`cursor-pointer text-white ${blackActive ? 'bg-amber-500' : ''} w-[40px] text-center`}
-                  >
-                    {i.bMove}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {roomId && (
-            <Button bg={'gray'} w={'100%'} onClick={pass}>
-              Give up
-            </Button>
-          )}
-        </VStack>
-      )}
+        )}
+      </VStack>
     </AnalyseToolWrapper>
   );
 };
