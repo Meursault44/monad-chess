@@ -8,7 +8,7 @@ import { getBots, passGame } from '@/api/rooms.ts';
 import { usePlayBotsStore } from '@/store/playBots.ts';
 import { useReviewGameStore } from '@/store/reviewGame.ts';
 import { useDialogsStore } from '@/store/dialogs.ts';
-import {useAuthStore} from '@/store/auth.ts';
+import { useAuthStore } from '@/store/auth.ts';
 import { Link } from 'react-router';
 
 const sideItems = [
@@ -87,9 +87,9 @@ export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame }) => {
 
   useEffect(() => {
     if (accessToken) {
-      refetch()
+      refetch();
     }
-  }, [accessToken])
+  }, [accessToken]);
 
   return (
     <AnalyseToolWrapper title={'Play Bots'} logoSrc={playBotsLogo}>

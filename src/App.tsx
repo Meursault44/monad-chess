@@ -40,7 +40,7 @@ function App() {
           console.error('Login mutation error', e);
         });
     }
-  }, [authenticated, ready, userAddress, mutateAsync]);
+  }, [authenticated, ready, user?.id, userAddress, mutateAsync]);
 
   return (
     <Routes>
