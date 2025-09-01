@@ -34,7 +34,7 @@ const RippleLayer: React.FC<Props> = ({
 
     const rect = host.getBoundingClientRect();
     const x = 0;
-    const y = 348;
+    const y = 390;
 
     setRipples((arr) => [
       ...arr,
