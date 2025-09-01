@@ -128,12 +128,12 @@ function MoveCell(props: {
       spacing="2"
       cursor="pointer"
       onClick={onClick}
-      bg={active ? 'gray.100' : 'transparent'}
+      bg={active ? 'rgba(131, 110, 249, 0.7)' : 'transparent'}
       borderRadius="md"
       px="1.5"
       py="0.5"
       transition="background 0.15s"
-      _hover={{ bg: active ? 'gray.200' : 'gray.50' }}
+      _hover={{ bg: active ? 'rgba(131, 110, 249, 0.7)' : 'rgba(131, 110, 249, 0.4)' }}
       align="center"
     >
       {/* маленький круглый маркер слева */}
@@ -286,30 +286,12 @@ export const ReviewGamePage = () => {
   }
 
   return (
-    <HStack justify="center" spacing="3rem" align="flex-start">
+    <HStack justify="center" gap="3rem" align="flex-start">
       {/* Левая колонка: доска + навигация */}
       <Box display="flex" flexDir="column">
         <PlayerRow />
         <ChessBoardWrapper />
         <PlayerRow />
-
-        <HStack spacing={3} mt={3} justify="center">
-          <Button onClick={() => goToPly(0)} isDisabled={!canPrev}>
-            « В начало
-          </Button>
-          <Button onClick={() => goToPly(Math.max(0, currentPly - 1))} isDisabled={!canPrev}>
-            ← Назад
-          </Button>
-          <Text minW="90px" textAlign="center">
-            {currentPly}/{totalPly}
-          </Text>
-          <Button onClick={() => goToPly(Math.min(totalPly, currentPly + 1))} isDisabled={!canNext}>
-            Вперёд →
-          </Button>
-          <Button onClick={() => goToPly(totalPly)} isDisabled={!canNext}>
-            В конец »
-          </Button>
-        </HStack>
       </Box>
 
       {/* Правая колонка: таблица анализа */}
@@ -363,6 +345,30 @@ export const ReviewGamePage = () => {
             </Table.Body>
           </Table.Root>
         </Box>
+        <HStack w={'100%'} justifyContent={'center'}>
+          <Button
+            bg={'#25232C'}
+            _hover={{
+              backgroundColor: '#4F4372',
+            }}
+            w={'40%'}
+            onClick={() => goToPly(Math.max(0, currentPly - 1))}
+            isDisabled={!canPrev}
+          >
+            ← Prev
+          </Button>
+          <Button
+            bg={'#25232C'}
+            w={'40%'}
+            _hover={{
+              backgroundColor: '#4F4372',
+            }}
+            onClick={() => goToPly(Math.min(totalPly, currentPly + 1))}
+            isDisabled={!canNext}
+          >
+            Next →
+          </Button>
+        </HStack>
       </AnalyseToolWrapper>
     </HStack>
   );

@@ -106,7 +106,6 @@ const config = defineConfig({
     'html, body': {
       fontFamily: "'Open Sans', system-ui, sans-serif",
       backgroundColor: '{colors.appBg}',
-      color: '{colors.textMain}',
     },
   },
 });
