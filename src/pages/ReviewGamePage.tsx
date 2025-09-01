@@ -262,15 +262,6 @@ export const ReviewGamePage = () => {
   const canPrev = currentPly > 0;
   const canNext = currentPly < totalPly;
 
-  // -------- Render --------
-  if (isLoading) {
-    return (
-      <HStack justify="center" minH="60vh">
-        <Text>Загрузка…</Text>
-      </HStack>
-    );
-  }
-
   if (error) {
     return (
       <HStack justify="center" minH="60vh">
