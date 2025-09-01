@@ -201,8 +201,9 @@ export const ReviewGamePage = () => {
     if (!analyses.length || hydratedRef.current) return;
 
     const baseFen = (data as any)?.initialFen || analyses[0]?.fenBefore || START_FEN;
+    console.log(data?.room?.adminSide)
 
-    startFromFen(baseFen);
+    startFromFen(baseFen, data?.room?.adminSide === 'black' ? 'b' : 'w');
 
     for (const it of analyses) {
       const ok = applySmart(applyMove, it.move);
