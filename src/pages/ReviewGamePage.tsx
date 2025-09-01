@@ -163,6 +163,11 @@ export const ReviewGamePage = () => {
   const currentPly = useChessStore((s) => s.currentPly);
   const totalPly = useChessStore((s) => s.timelineSan.length);
 
+  const plyRef = useRef({ currentPly: 0, totalPly: 0 });
+  useEffect(() => {
+    plyRef.current = { currentPly, totalPly };
+  }, [currentPly, totalPly]);
+
   // загрузка анализа
   const { data, isLoading, error } = useQuery({
     queryKey: ['analyze', id],
@@ -201,7 +206,7 @@ export const ReviewGamePage = () => {
     if (!analyses.length || hydratedRef.current) return;
 
     const baseFen = (data as any)?.initialFen || analyses[0]?.fenBefore || START_FEN;
-    console.log(data?.room?.adminSide)
+    console.log(data?.room?.adminSide);
 
     startFromFen(baseFen, data?.room?.adminSide === 'black' ? 'b' : 'w');
 
@@ -216,6 +221,29 @@ export const ReviewGamePage = () => {
       resetGame();
     };
   }, [analyses, data, startFromFen, applyMove, goToPly]);
+
+  useEffect(() => {
+    const isTypingElement = (el: any) =>
+      el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || el?.isContentEditable;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      // не ломаем ввод текста
+      if (isTypingElement(e.target)) return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const { currentPly, totalPly } = plyRef.current;
+        goToPly(Math.max(0, currentPly - 1));
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const { currentPly, totalPly } = plyRef.current;
+        goToPly(Math.min(totalPly, currentPly + 1));
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [goToPly]);
 
   // строки таблицы: белые всегда слева, чёрные справа
   const rows = useMemo(() => {
