@@ -1,6 +1,6 @@
 import { usePrivy } from '@privy-io/react-auth';
 import { Button } from '@chakra-ui/react';
-import { useAuthStore } from '@/store/auth';
+import { useAuthStore } from '@/store/auth.ts';
 import { profileUpdateRating } from '@/api/profile.ts';
 import { useLoginMutation } from '@/api/auth';
 import { useMemo } from 'react';

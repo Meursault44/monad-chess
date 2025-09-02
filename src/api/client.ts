@@ -16,6 +16,7 @@ export async function refreshAccessToken(): Promise<string | null> {
   if (!res.ok) return null;
   const data = (await res.json()) as { token?: string };
   const newToken = data?.token ?? null;
+  console.log(newToken)
   if (newToken) setAccessToken(newToken);
   return newToken;
 }
@@ -41,7 +42,6 @@ export async function apiFetch(input: string, init: RequestInit = {}) {
   });
 
   if (res.status === 401) {
-    // Пробуем освежить токен и повторить
     const newToken = await refreshAccessToken();
     if (newToken) {
       const retryHeaders = new Headers(init.headers || {});

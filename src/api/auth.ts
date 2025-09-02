@@ -1,5 +1,5 @@
 import { type User } from '@/store/auth.ts';
-import { useAuthStore } from '@/store/auth';
+import { useAuthStore } from '@/store/auth.ts';
 import { usePuzzlesStore } from '@/store/puzzles.ts';
 import { useMutation } from '@tanstack/react-query';
 

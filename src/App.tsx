@@ -17,6 +17,7 @@ import { profileUpdateRating } from '@/api/profile.ts';
 function App() {
   const { ready, authenticated, user } = usePrivy();
   const { mutateAsync } = useLoginMutation();
+  console.log('user', user);
 
   const userAddress = useMemo(
     () =>
