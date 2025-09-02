@@ -28,7 +28,7 @@ function App() {
 
   useEffect(() => {
     if (authenticated && ready && user?.id && userAddress) {
-      //  && !getAccessToken() - add
+      //  && !accessToken - add
       mutateAsync({
         provider: 'monad',
         providerAppId: user?.id,

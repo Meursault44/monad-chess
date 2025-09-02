@@ -113,7 +113,11 @@ export const PuzzlesPage = () => {
         targetEl={progressRef.current}
       />
       <AnalyseToolWrapper title={'Puzzles'} logoSrc={PuzzleLogo}>
-        <Assistant message={assistantMessage} isPending={isPendingAssistantMessage} minHeight={'250px'} />
+        <Assistant
+          message={assistantMessage}
+          isPending={isPendingAssistantMessage}
+          minHeight={'250px'}
+        />
         <RippleLayer color="#836EF9" />
         <VStack alignItems={'flex-start'}>
           <HStack>

@@ -15,10 +15,12 @@ export async function refreshAccessToken(): Promise<string | null> {
   });
   if (!res.ok) return null;
   const data = (await res.json()) as { token?: string };
-  const newToken = data?.token ?? null;
-  console.log(data)
-  console.log(newToken)
-  if (newToken) setAccessToken(newToken);
+  const newToken = data?.data?.token ?? null;
+  if (newToken) {
+    setAccessToken(newToken);
+  } else {
+    setAccessToken(null);
+  }
   return newToken;
 }
 
