@@ -200,13 +200,9 @@ export const ReviewGamePage = () => {
     return turn === 'b';
   }, [analyses]);
 
-  // гидрация стора один раз
-  const hydratedRef = useRef(false);
   useEffect(() => {
-    if (!analyses.length || hydratedRef.current) return;
-
+    if (!analyses.length) return;
     const baseFen = (data as any)?.initialFen || analyses[0]?.fenBefore || START_FEN;
-    console.log(data?.room?.adminSide);
 
     startFromFen(baseFen, data?.room?.adminSide === 'black' ? 'b' : 'w');
 
@@ -215,12 +211,11 @@ export const ReviewGamePage = () => {
       if (!ok) break;
     }
 
-    hydratedRef.current = true;
     goToPly(analyses.length > 0 ? 1 : 0);
     return () => {
       resetGame();
     };
-  }, [analyses, data, startFromFen, applyMove, goToPly]);
+  }, [analyses, data, startFromFen, applyMove, goToPly, resetGame]);
 
   useEffect(() => {
     const isTypingElement = (el: any) =>

@@ -9,6 +9,7 @@ import { createRoom } from '@/api/rooms.ts';
 import { useChessWs } from '@/hooks/useChessWss.ts';
 import type { Square } from 'chess.js';
 import { usePlayBotsStore } from '@/store/playBots.ts';
+import { useSoundEffects } from '@/hooks';
 
 export const PlayPageComputer = () => {
   const token = useAuthStore((s) => s.accessToken);
@@ -59,7 +60,6 @@ export const PlayPageComputer = () => {
   // 5) коллбек твоего хода (пользовательского)
   const onMyMove = useCallback(
     (from: Square, to: Square, promotion?: string) => {
-      console.log('onMyMove', from, to, promotion);
       sendMove(from, to, promotion ?? '');
     },
     [sendMove],

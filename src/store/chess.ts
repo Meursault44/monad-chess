@@ -148,6 +148,10 @@ export const useChessStore = create<ChessStore>()((set, get) => {
 
     goToPly: (ply) => {
       const { timelineSan } = get();
+      if (timelineSan.length === 0) {
+        // Ещё не прогидрировались — просто игнорируем переход
+        return;
+      }
       const clamped = Math.max(0, Math.min(ply, timelineSan.length));
       rebuildToPly(clamped);
     },

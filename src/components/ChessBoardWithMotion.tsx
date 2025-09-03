@@ -87,7 +87,6 @@ export const ChessBoardWithMotion = ({
 
   useEffect(() => {
     if (winAnimationData) {
-      console.log('winAnimationData', winAnimationData);
       setAnimBadge({ id: Date.now(), square: winAnimationData, label: '+10' });
     }
   }, [winAnimationData]);
