@@ -6,6 +6,8 @@ import { useDialogsStore } from '@/store/dialogs';
 import { useSoundEffects, useCustomPieces } from '@/hooks';
 import PromotionOverlay from '@/components/PromotionOverlay';
 import { type PieceHandlerArgs } from 'react-chessboard';
+import { usePuzzlesStore } from '@/store/puzzles.ts';
+import { makeSuccessBadgeDataUrl, makeErrorBadgeDataUrl } from '@/utils/badges.tsx';
 
 type SquaresStylesType = Partial<Record<Square, React.CSSProperties>>;
 
@@ -27,27 +29,6 @@ const lichessRing = (color = '#ff0000', stroke = 6, sizePct = 95): React.CSSProp
 function toUci(from: string, to: string, promo?: 'q' | 'r' | 'b' | 'n') {
   return `${from}${to}${promo ?? ''}`;
 }
-
-// helper: SVG “крестик” в кружке как data URL
-const makeErrorBadgeDataUrl = (fill = 'rgba(210, 56, 70, 1)') => {
-  const svg = `
-  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
-    <circle cx='12' cy='12' r='12' fill='${fill}'/>
-    <path d='M8 8l8 8M16 8l-8 8' stroke='white' stroke-width='2' stroke-linecap='round'/>
-  </svg>`;
-  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
-};
-
-const makeSuccessBadgeDataUrl = (fill = 'rgba(38, 181, 97, 1)') => {
-  const svg = `
-  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>
-    <circle cx='12' cy='12' r='12' fill='${fill}'/>
-    <path d='M7 12.5l3.5 3.5L17 9'
-      fill='none' stroke='white' stroke-width='2.5'
-      stroke-linecap='round' stroke-linejoin='round'/>
-  </svg>`;
-  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
-};
 
 // helper: генерируем CSS для нужного id
 const makeBadgeCss = (
@@ -111,6 +92,7 @@ export default function ChessBoardWrapper({
   const checkPremove = useChessStore((s) => s.checkPremove);
   const findPiece = useChessStore((s) => s.findPiece);
   const getLastMoveSquares = useChessStore((s) => s.getLastMoveSquares);
+  const setRatingChange = usePuzzlesStore((s) => s.setRatingChange);
 
   // управление доступностью ходов
   const phase = useChessStore((s) => s.phase); // 'idle' | 'playing' | 'finished'
@@ -234,7 +216,7 @@ export default function ChessBoardWrapper({
     }
   }, [findPiece, setBlinkSquares, turn]);
 
-  // промо helpers
+  // промо utils
   function findLegalMove(from: Square, to: Square) {
     const legal = moves({ square: from as Square, verbose: true }) as any[];
     return legal.find((m) => m.from === from && m.to === to);
@@ -448,9 +430,6 @@ export default function ChessBoardWrapper({
       setPossibleMovesSquares({});
 
       playMoveSound({ moveInfo, isCheck });
-      if (getGameStatus() === playerSide && showDialogWinGame) {
-        setDialogWinGame(true);
-      }
       return true;
     } catch {
       playIllegalSfx();
@@ -537,7 +516,6 @@ export default function ChessBoardWrapper({
     setPremove(null);
     setPremoveSquares({});
     updateData();
-    if (getGameStatus() === playerSide && showDialogWinGame) setDialogWinGame(true);
   }, [phase, atTip, isPlayerTurn, turn, premove, moves, applyMove, updateData]);
 
   // отключаем анимацию во время промо-оверлея
@@ -582,6 +560,7 @@ export default function ChessBoardWrapper({
             updateData();
             setPuzzleMovesSquares({});
             setIsLock(false);
+            setRatingChange(null);
             setBadgeCss('');
           }}
           style={{

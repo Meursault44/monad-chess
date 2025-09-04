@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { getRandomPuzzle, getPuzzleGreetings, analyzePuzzle } from '@/api/puzzles';
-import { Button, Heading, Image, HStack, VStack, Progress, Text, Box } from '@chakra-ui/react';
+import { Button, Heading, HStack, VStack, Progress, Text, Box } from '@chakra-ui/react';
 import { usePuzzleEngine } from '@/hooks/usePuzzleEngine';
 import { useChessStore } from '@/store/chess.ts';
 import { usePuzzleEffects } from '@/store/puzzleEffects.ts';
@@ -14,6 +14,7 @@ import RippleLayer from '@/components/RippleLayer';
 import { AnimatedNumber } from '@/components/AnimatedNumber.tsx';
 import { Assistant } from '@/components/Assistant.tsx';
 import { useAuthStore } from '@/store/auth.ts';
+import { ErrorBadge, SuccessBadge } from '@/utils/badges.tsx';
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
   if (!fen) return '';
@@ -22,7 +23,11 @@ function sideToMoveFromFen(fen?: string): 'w' | 'b' | '' {
 }
 
 export const PuzzlesPage = () => {
-  const { data: puzzle, refetch } = useQuery({
+  const {
+    data: puzzle,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ['puzzle'],
     queryFn: getRandomPuzzle, // ← без параметров
     enabled: false, // ← НЕ фетчить на маунте
@@ -32,7 +37,7 @@ export const PuzzlesPage = () => {
 
   const {
     data: greetings,
-    isPending: isPendingGreetings,
+    isFetching: isFetchingGreetings,
     refetch: refetchGreetings,
   } = useQuery({
     queryKey: ['puzzles/greetings'],
@@ -51,7 +56,6 @@ export const PuzzlesPage = () => {
   const { validateMove, opponentLogic, clearState } = usePuzzleEngine(puzzle?.puzzle, side);
 
   const startFromFen = useChessStore((s) => s.startFromFen);
-  const phase = useChessStore((s) => s.phase);
   const setAssistantMessage = usePuzzlesStore((s) => s.setAssistantMessage);
   const assistantMessage = usePuzzlesStore((s) => s.assistantMessage);
   const rating = usePuzzlesStore((s) => s.rating);
@@ -67,19 +71,53 @@ export const PuzzlesPage = () => {
 
   const progressRef = useRef<HTMLDivElement>(null);
 
+  const topContent = useMemo(() => {
+    if (!puzzle?.puzzle?.fen) return;
+    if (ratingChange && ratingChange > 0) {
+      return (
+        <HStack w={'100%'}>
+          <SuccessBadge />
+          <Text fontWeight={600}>Solved</Text>
+        </HStack>
+      );
+    }
+    if (ratingChange && ratingChange < 0) {
+      return (
+        <HStack w={'100%'}>
+          <ErrorBadge />
+          <Text fontWeight={600}>Incorrect</Text>
+        </HStack>
+      );
+    }
+    const side = puzzle?.puzzle?.fen.split(' ')[1] as 'w' | 'b';
+    const text = side === 'w' ? 'Black to move' : 'White to move';
+    return (
+      <HStack w={'100%'}>
+        <Box
+          h={'24px'}
+          w={'24px'}
+          borderRadius={'5px'}
+          border={'gray 3px solid'}
+          backgroundColor={side === 'w' ? 'black' : 'white'}
+        ></Box>
+        <Text fontWeight={600}>{text}</Text>
+      </HStack>
+    );
+  }, [puzzle?.puzzle?.fen, ratingChange]);
+
   useEffect(() => {
     if (greetings) {
       setAssistantMessage(greetings?.greeting?.text);
     }
-  }, [greetings, setAssistantMessage, isPendingGreetings, setIsPendingAssistantMessage]);
+  }, [greetings, setAssistantMessage, isFetchingGreetings, setIsPendingAssistantMessage]);
 
   useEffect(() => {
-    if (isPendingAnalyze || isPendingGreetings) {
+    if (isPendingAnalyze || isFetchingGreetings) {
       setIsPendingAssistantMessage(true);
     } else {
       setIsPendingAssistantMessage(false);
     }
-  }, [isPendingAnalyze, isPendingGreetings, setIsPendingAssistantMessage]);
+  }, [isPendingAnalyze, isFetchingGreetings, setIsPendingAssistantMessage]);
 
   useEffect(() => {
     if (dataAnalyze?.text) {
@@ -113,65 +151,72 @@ export const PuzzlesPage = () => {
         targetEl={progressRef.current}
       />
       <AnalyseToolWrapper title={'Puzzles'} logoSrc={PuzzleLogo}>
-        <Assistant
-          message={assistantMessage}
-          isPending={isPendingAssistantMessage}
-          minHeight={'250px'}
-        />
-        <RippleLayer color="#836EF9" />
-        <VStack alignItems={'flex-start'}>
-          <HStack>
-            <Heading color="white">
-              <AnimatedNumber value={ratingLocal ?? 0} />
-            </Heading>
-            {!!ratingChange && ratingChange > 0 && (
-              <Heading color={'rgba(38, 181, 97, 1)'}> +{ratingChange}</Heading>
-            )}
-            {!!ratingChange && ratingChange < 0 && (
-              <Heading color={'rgba(210, 56, 70, 1)'}> {ratingChange}</Heading>
-            )}
-          </HStack>
-          <div ref={progressRef}>
-            <Progress.Root value={Number(ratingLocal) % 100} minW="320px">
-              <HStack>
-                <Progress.Track h={'20px'} borderRadius={'10px'} flex={'1'}>
-                  <Progress.Range bg={'#836EF9'} />
-                </Progress.Track>
-                <Text fontSize={'20px'} color={'white'}>
-                  {!!rating && Math.trunc(rating / 100) - 4} lvl
-                </Text>
-              </HStack>
-            </Progress.Root>
-          </div>
+        <VStack gap={'1.2rem'}>
+          <Assistant
+            message={assistantMessage}
+            isPending={isPendingAssistantMessage}
+            minHeight={'250px'}
+            topContent={topContent}
+          />
+          <RippleLayer color="#836EF9" />
+          <VStack alignItems={'flex-start'}>
+            <HStack>
+              <Heading color="white">
+                <AnimatedNumber value={ratingLocal ?? 0} />
+              </Heading>
+              {!!ratingChange && ratingChange > 0 && (
+                <Heading color={'rgba(38, 181, 97, 1)'}> +{ratingChange}</Heading>
+              )}
+              {!!ratingChange && ratingChange < 0 && (
+                <Heading color={'rgba(210, 56, 70, 1)'}> {ratingChange}</Heading>
+              )}
+            </HStack>
+            <div ref={progressRef}>
+              <Progress.Root value={Number(ratingLocal) % 100} minW="320px">
+                <HStack>
+                  <Progress.Track h={'20px'} borderRadius={'10px'} flex={'1'}>
+                    <Progress.Range bg={'#836EF9'} />
+                  </Progress.Track>
+                  <Text fontSize={'20px'} color={'white'}>
+                    {!!rating && Math.trunc(rating / 100) - 4} lvl
+                  </Text>
+                </HStack>
+              </Progress.Root>
+            </div>
+          </VStack>
+          <Box>
+            <Button
+              onClick={async () => {
+                const res = await refetch(); // дождались новые данные
+                const next = res.data;
+                mutate({ id: next?.puzzle?.id, isGreeting: true });
+                if (next?.puzzle?.fen) {
+                  clearState();
+                  const sideNext = sideToMoveFromFen(next.puzzle.fen);
+                  startFromFen(next.puzzle.fen, sideNext); // теперь стартуем именно НОВЫЙ пазл
+                  setRatingChange(null);
+                }
+              }}
+              bg={'#25232C'}
+              _hover={{
+                backgroundColor: '#4F4372',
+              }}
+              h={'50px'}
+              w={'320px'}
+              mx={'10px'}
+              fontSize={'18px'}
+              disabled={isFetching}
+            >
+              {isFetching ? (
+                <ThreeDotsWave bgColor={'white'} />
+              ) : !puzzle ? (
+                'Solve Puzzles'
+              ) : (
+                'Next Puzzle'
+              )}
+            </Button>
+          </Box>
         </VStack>
-        <Box>
-          <Button
-            onClick={async () => {
-              const res = await refetch(); // дождались новые данные
-              const next = res.data;
-              mutate({ id: next?.puzzle?.id, isGreeting: true });
-              if (next?.puzzle?.fen) {
-                clearState();
-                const sideNext = sideToMoveFromFen(next.puzzle.fen);
-                startFromFen(next.puzzle.fen, sideNext); // теперь стартуем именно НОВЫЙ пазл
-                setRatingChange(null);
-              }
-            }}
-            bg={'#25232C'}
-            _hover={{
-              backgroundColor: '#4F4372',
-            }}
-            h={'50px'}
-            w={'320px'}
-            mx={'10px'}
-            fontSize={'18px'}
-          >
-            {!puzzle ? 'Solve Puzzles' : 'Next Puzzle'}
-          </Button>
-          {phase === 'playing' && (
-            <div className={'text-white'}>{side === 'w' ? 'White move' : 'Black move'}</div>
-          )}
-        </Box>
       </AnalyseToolWrapper>
     </div>
   );

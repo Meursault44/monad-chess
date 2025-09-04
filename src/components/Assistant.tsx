@@ -1,5 +1,5 @@
-import type { FC } from 'react';
-import { Box, HStack, Image, Text } from '@chakra-ui/react';
+import type { FC, ReactNode } from 'react';
+import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react';
 import assistent from '@/assets/assistent.png';
 import { ThreeDotsWave } from '@/components/ThreeDotsWave.tsx';
 
@@ -7,9 +7,15 @@ type AssistantType = {
   message: string;
   isPending?: boolean;
   minHeight?: string;
+  topContent?: ReactNode;
 };
 
-export const Assistant: FC<AssistantType> = ({ message, isPending = false, minHeight }) => {
+export const Assistant: FC<AssistantType> = ({
+  message,
+  isPending = false,
+  minHeight,
+  topContent,
+}) => {
   return (
     <HStack
       mx="10px"
@@ -36,9 +42,12 @@ export const Assistant: FC<AssistantType> = ({ message, isPending = false, minHe
           {isPending ? (
             <ThreeDotsWave />
           ) : (
-            <Text lineHeight="1.2" fontSize="16px">
-              {message}
-            </Text>
+            <VStack>
+              {topContent}
+              <Text lineHeight="1.4" fontSize="16px" fontWeight={500}>
+                {message}
+              </Text>
+            </VStack>
           )}
         </Box>
 

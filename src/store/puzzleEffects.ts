@@ -8,6 +8,7 @@ type PuzzleEffectsStore = {
   triggerWinAnimation: (sq: Square | null) => void;
   triggerRipple: () => void;
   setAnimationDone: (val: boolean) => void;
+  resetRippleSignal: () => void;
 };
 
 export const usePuzzleEffects = create<PuzzleEffectsStore>((set) => ({
@@ -17,4 +18,5 @@ export const usePuzzleEffects = create<PuzzleEffectsStore>((set) => ({
   triggerRipple: () => set((s) => ({ rippleSignal: s.rippleSignal + 1 })),
   triggerWinAnimation: (sq) => set({ winAnimationData: sq }),
   setAnimationDone: (val) => set({ animationDone: val }),
+  resetRippleSignal: () => set({ rippleSignal: 0 }),
 }));

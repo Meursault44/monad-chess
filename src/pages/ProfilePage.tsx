@@ -29,7 +29,7 @@ import { useNavigate } from 'react-router';
 import { getProfilePuzzles, getProfileExperience, getProfileGames } from '@/api/profile';
 import { getLeaderboard } from '@/api/leaderboard';
 
-// ---------- helpers ----------
+// ---------- utils ----------
 const fmtDate = (iso?: string) => (iso ? new Date(iso).toLocaleString() : '—');
 
 const resultBadge = (r?: string) => {

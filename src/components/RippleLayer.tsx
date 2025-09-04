@@ -26,7 +26,7 @@ const RippleLayer: React.FC<Props> = ({
 }) => {
   const layerRef = useRef<HTMLDivElement>(null);
   const [ripples, setRipples] = useState<Ripple[]>([]);
-  const { rippleSignal } = usePuzzleEffects();
+  const { rippleSignal, resetRippleSignal } = usePuzzleEffects();
 
   const fireRipple = () => {
     const host = layerRef.current;
@@ -53,7 +53,12 @@ const RippleLayer: React.FC<Props> = ({
     if (rippleSignal > 0) {
       fireRipple();
     }
-  }, [rippleSignal]);
+    return () => {
+      if (rippleSignal > 0) {
+        resetRippleSignal();
+      }
+    };
+  }, [rippleSignal, fireRipple, resetRippleSignal]);
 
   return (
     <div

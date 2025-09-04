@@ -13,11 +13,14 @@ const loadingCircle: React.CSSProperties = {
   display: 'block',
   width: '0.5rem',
   height: '0.5rem',
-  backgroundColor: 'black',
   borderRadius: '0.25rem',
 };
 
-export const ThreeDotsWave: React.FC = () => {
+type ThreeDotsWaveType = {
+  bgColor?: string;
+};
+
+export const ThreeDotsWave: React.FC<ThreeDotsWaveType> = ({ bgColor = 'black' }) => {
   const dots = [0, 1, 2];
 
   return (
@@ -25,7 +28,7 @@ export const ThreeDotsWave: React.FC = () => {
       {dots.map((i) => (
         <motion.span
           key={i}
-          style={loadingCircle}
+          style={{ ...loadingCircle, backgroundColor: bgColor }}
           initial={{ y: '0%' }}
           animate={{ y: ['0%', '100%'] }}
           transition={{
