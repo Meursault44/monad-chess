@@ -173,6 +173,7 @@ export default function ChessBoardWrapper({
       setPremoveSquares({});
       setPossibleMovesSquares({});
       setPromotionMove(null);
+      setBlinkSquares({});
     }
   }, [atTip]);
 
@@ -198,23 +199,19 @@ export default function ChessBoardWrapper({
   }
 
   const highlightingTheKingUnderCheck = useCallback(() => {
+    if (turn !== playerSide) return;
     const sq = findPiece({ color: turn, type: 'k' });
     if (sq) {
       let count = 0;
       const id = setInterval(() => {
-        setBlinkSquares((prev) =>
-          count % 2 === 0
-            ? { ...prev, [sq]: { background: 'rgba(235, 97, 80, .8)' } }
-            : (() => {
-                const { [sq]: _, ...rest } = prev;
-                return rest;
-              })(),
+        setBlinkSquares(() =>
+          count % 2 === 0 ? { [sq]: { background: 'rgba(235, 97, 80, .8)' } } : {},
         );
         count++;
         if (count > 6) clearInterval(id);
       }, 250);
     }
-  }, [findPiece, setBlinkSquares, turn]);
+  }, [findPiece, setBlinkSquares, turn, playerSide]);
 
   // промо utils
   function findLegalMove(from: Square, to: Square) {
