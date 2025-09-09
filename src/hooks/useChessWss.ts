@@ -5,6 +5,7 @@ import { refreshAccessToken } from '@/api/client.ts';
 import { useDialogsStore } from '@/store/dialogs.ts';
 import { useMutation } from '@tanstack/react-query';
 import { passGame } from '@/api/rooms.ts';
+import { useSoundEffects } from '@/hooks';
 
 export type OpponentMove = {
   from: Square;
@@ -32,6 +33,7 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
   const setDialogLoseGame = useDialogsStore((s) => s.setDialogLoseGame);
   const playerSide = useChessStore((s) => s.playerSide);
   const setPlayerSide = useChessStore((s) => s.setPlayerSide);
+  const { playGameStartSfx } = useSoundEffects();
 
   // хранить актуальную сторону без протягивания в deps
   const playerSideRef = useRef(playerSide);
@@ -47,7 +49,7 @@ export function useChessWs({ token, room, onOpponentMove }: UseChessWsOptions) {
     // не пересоздаём, если уже открыт
     if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) return;
 
-    console.log('init ws'); // будет дважды в dev StrictMode
+    playGameStartSfx();
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
     setStatus('connecting');

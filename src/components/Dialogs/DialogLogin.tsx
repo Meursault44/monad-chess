@@ -1,9 +1,16 @@
-import { CloseButton, Dialog, Portal } from '@chakra-ui/react';
+import { Button, CloseButton, Dialog, Portal } from '@chakra-ui/react';
 import { useDialogsStore } from '@/store/dialogs';
 import { AuthButtons } from '@/components/AuthButton.tsx';
+import { Link } from 'react-router';
+import { useAuthStore } from '@/store/auth.ts';
+import { usePrivy } from '@privy-io/react-auth';
 
 export const DialogLogin = () => {
   const { dialogLogin, setDialogLogin } = useDialogsStore();
+  const { authenticated } = usePrivy();
+
+  const userName = useAuthStore((s) => s.userName);
+  console.log(userName);
 
   return (
     <>
@@ -13,10 +20,20 @@ export const DialogLogin = () => {
           <Dialog.Positioner>
             <Dialog.Content>
               <Dialog.Header>
-                <Dialog.Title>Please log in to continue</Dialog.Title>
+                <Dialog.Title>
+                  {!userName && authenticated
+                    ? 'create a username to continue'
+                    : 'Please log in to continue'}
+                </Dialog.Title>
               </Dialog.Header>
               <Dialog.Body display={'flex'} justifyContent={'center'}>
-                <AuthButtons />
+                {!userName?.length && authenticated ? (
+                  <Button w={'100%'} h={'54px'}>
+                    <Link to={'https://monad-games-id-site.vercel.app/'}>Create a username</Link>
+                  </Button>
+                ) : (
+                  <AuthButtons />
+                )}
               </Dialog.Body>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" />

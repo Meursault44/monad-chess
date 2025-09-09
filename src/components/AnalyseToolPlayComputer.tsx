@@ -24,7 +24,6 @@ type AnalyseToolType = {
 
 export const AnalyseToolPlayComputer: FC<AnalyseToolType> = ({ startGame, pass }) => {
   const timeline = useChessStore((s) => s.timelineSan);
-  const currentPly = useChessStore((s) => s.currentPly);
   const setBotId = usePlayBotsStore((s) => s.setBotId);
   const botId = usePlayBotsStore((s) => s.botId);
   const setBotAvatar = usePlayBotsStore((s) => s.setBotAvatar);

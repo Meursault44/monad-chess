@@ -1,6 +1,6 @@
-import { VStack, HStack } from '@chakra-ui/react';
+import { VStack, HStack, Button } from '@chakra-ui/react';
 import { Link as ChakraLink, Image } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router';
+import { Link, Link as RouterLink } from 'react-router';
 import Logo from '/Logo.png';
 import PuzzleLogo from '/puzzle2.png';
 import play from '/play.png';
@@ -9,8 +9,14 @@ import tournaments from '/tournaments.png';
 import profile from '/profile.svg';
 
 import { AuthButtons } from '@/components/AuthButton.tsx';
+import { useAuthStore } from '@/store/auth.ts';
+import { usePrivy } from '@privy-io/react-auth';
 
 export const Sidebar = () => {
+  const userName = useAuthStore((s) => s.userName);
+  const setAccessToken = useAuthStore((s) => s.setAccessToken);
+  const { authenticated, logout } = usePrivy();
+
   return (
     <VStack
       position="sticky"
@@ -136,7 +142,25 @@ export const Sidebar = () => {
         </ChakraLink>
       </VStack>
       <HStack mb={'40px'} p={'0 20px'} display={'flex'} justifyContent={'center'}>
-        <AuthButtons />
+        {!userName?.length && authenticated ? (
+          <VStack>
+            <Button w={'100%'} h={'54px'}>
+              <Link to={'https://monad-games-id-site.vercel.app/'}>Create a username</Link>
+            </Button>
+            <Button
+              onClick={async () => {
+                logout();
+                setAccessToken(null);
+              }}
+              w={'100%'}
+              h={'54px'}
+            >
+              Logout
+            </Button>
+          </VStack>
+        ) : (
+          <AuthButtons />
+        )}
       </HStack>
     </VStack>
   );

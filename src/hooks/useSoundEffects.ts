@@ -9,6 +9,7 @@ import moveCheckSfx from '../sounds/move-check.mp3';
 import puzzleCorrectSfx from '../sounds/puzzle-correct-2.mp3';
 import gameLoseLongSfx from '../sounds/game-lose-long.mp3';
 import gameWinLongSfx from '../sounds/game-win-long.mp3';
+import gameStartSfx from '../sounds/game-start.mp3';
 import { type Move } from 'chess.js';
 
 export const useSoundEffects = () => {
@@ -22,6 +23,7 @@ export const useSoundEffects = () => {
   const [playPuzzleCorrectSfx] = useSound(puzzleCorrectSfx, { volume: 0.3 });
   const [playGameLoseLongSfx] = useSound(gameLoseLongSfx, { volume: 0.3 });
   const [playGameWinLongSfx] = useSound(gameWinLongSfx, { volume: 0.3 });
+  const [playGameStartSfx] = useSound(gameStartSfx, { volume: 0.3 });
 
   const playMoveSound = ({ moveInfo, isCheck }: { moveInfo: Move; isCheck: boolean }) => {
     if (moveInfo.promotion) {
@@ -44,5 +46,6 @@ export const useSoundEffects = () => {
     playPuzzleCorrectSfx,
     playGameLoseLongSfx,
     playGameWinLongSfx,
+    playGameStartSfx,
   };
 };

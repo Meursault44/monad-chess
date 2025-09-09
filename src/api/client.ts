@@ -1,4 +1,4 @@
-import { getAccessToken, setAccessToken } from '@/store/auth.ts';
+import { getAccessToken, getUserName, setAccessToken } from '@/store/auth.ts';
 import { QueryClient } from '@tanstack/react-query';
 import { setDialogLogin } from '@/store/dialogs.ts';
 
@@ -27,8 +27,9 @@ export async function refreshAccessToken(): Promise<string | null> {
 export async function apiFetch(input: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers || {});
   const token = getAccessToken();
+  const username = getUserName();
 
-  if (!token) {
+  if (!token || username === null) {
     setDialogLogin(true);
     return { ok: false, json: () => '' };
   }

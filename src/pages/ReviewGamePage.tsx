@@ -11,6 +11,7 @@ import { Image, VStack } from '@chakra-ui/react';
 import { wP, bP, wN, bN, wB, bB, wK, bK, wR, bR, bQ, wQ } from '@/assets/pieces';
 import type { PieceSymbol } from 'chess.js';
 import { QualityBadge, type Severity } from '@/components/QualityBadge';
+import { severityColor } from '@/utils/severityColors.ts';
 
 const piecesSrc = {
   b: {
@@ -43,15 +44,6 @@ import { Box, Button, HStack, Table, Text } from '@chakra-ui/react';
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 type Promo = 'q' | 'r' | 'b' | 'n';
-
-// цвета токенов для «бейдж-иконок»
-const severityColor: Record<Severity, string> = {
-  brilliant: 'green.500',
-  great: 'blue.500',
-  inaccuracy: 'yellow.500',
-  mistake: 'orange.500',
-  blunder: 'red.500',
-};
 
 // UCI вида e2e4, e7e8q
 const UCI_RE = /^[a-h][1-8][a-h][1-8]([qrbn])?$/i;

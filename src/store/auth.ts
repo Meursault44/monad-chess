@@ -12,9 +12,11 @@ export type User = {
 interface AuthState {
   user: User | null;
   accessToken: string | null;
+  userName: string | null;
   setAuth: (p: { user: User; accessToken: string }) => void;
   setAccessToken: (token: string | null) => void;
   setPuzzleRating: (rating: number) => void;
+  setUserName: (name: string | null) => void;
   clear: () => void;
 }
 
@@ -22,6 +24,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      userName: '',
       accessToken: null,
       setAuth: ({ user, accessToken }) => set({ user, accessToken }),
       setPuzzleRating: (rating) =>
@@ -29,6 +32,7 @@ export const useAuthStore = create<AuthState>()(
           user: state.user ? { ...state.user, puzzle_rating: rating } : state.user,
         })),
       setAccessToken: (token) => set({ accessToken: token }),
+      setUserName: (name) => set({ userName: name }),
       clear: () => set({ user: null, accessToken: null }),
     }),
     {
@@ -39,4 +43,5 @@ export const useAuthStore = create<AuthState>()(
 );
 
 export const getAccessToken = () => useAuthStore.getState().accessToken;
+export const getUserName = () => useAuthStore.getState().userName;
 export const setAccessToken = (t: string | null) => useAuthStore.getState().setAccessToken(t);
